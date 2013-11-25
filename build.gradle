@@ -1,0 +1,102 @@
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    group = 'com.andrewkroh.cisco'
+    version = '1.0'
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+
+    sourceCompatibility = '1.5'
+
+    jar {
+        manifest {
+            attributes 'Implementation-Title': "cisco-spa500-utilities-$project.name",
+                       'Implementation-Version': version,
+                       'Built-By': System.getProperty('user.name'),
+                       'Built-Date': new Date(),
+                       'Built-JDK': System.getProperty('java.version'),
+                       'Built-Gradle': gradle.gradleVersion
+        }
+    }
+
+    eclipse.project.name = rootProject.name + '-' + project.name
+
+    dependencies {
+        testCompile 'junit:junit:4.+',
+                    'org.hamcrest:hamcrest-all:1.3'
+    }
+}
+
+
+// --------------------------
+// Subproject configurations:
+// --------------------------
+project(':common') {
+    dependencies {
+        compile 'com.google.guava:guava:15.0'
+    }
+}
+
+project(':multicast-listener') {
+    apply plugin: 'application'
+
+    mainClassName = 'com.andrewkroh.cisco.multicast.MulticastListener'
+
+    dependencies {
+        compile 'com.beust:jcommander:1.29',
+                'org.slf4j:slf4j-api:1.7.5',
+                project(':common')
+        runtime 'org.slf4j:slf4j-simple:1.7.5'
+    }
+}
+
+project(':xml-services-api') {
+    apply plugin: 'java'
+
+    // Cisco version from the XSD:
+    version = '3.3.4'
+
+    configurations {
+        xjc
+    }
+
+    dependencies {
+        xjc 'com.sun.xml.bind:jaxb-impl:2.2+',
+            'com.sun.xml.bind:jaxb-xjc:2.2+'
+    }
+ 
+    sourceSets {
+        generated {
+            java.srcDirs = ["$buildDir/generated-src/jaxb"]
+        }
+    }
+
+    task xjc {
+        ext.package = 'com.cisco.xmlservices.generated'
+        ext.outputDir = sourceSets.generated.java.srcDirs.iterator().next()
+        outputs.dir(ext.outputDir)
+
+        doLast {
+            ant.taskdef(name: 'xjc', 
+                        classname: 'com.sun.tools.xjc.XJCTask',
+                        classpath: configurations.xjc.asPath)
+
+            ext.outputDir.mkdirs()
+            ant.xjc(destdir: ext.outputDir, package: ext.package,
+                    removeOldOutput: 'yes') {
+                schema(dir: 'src/main/resources/schema') {
+                    include (name: 'CiscoIPPhone.xsd')
+                }
+                arg(value: '-verbose')
+            }
+        }
+    }
+ 
+    compileJava.dependsOn xjc
+    compileJava.source xjc.outputs.files, sourceSets.main.java
+}
