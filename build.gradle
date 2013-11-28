@@ -11,8 +11,8 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'eclipse'
 
-    sourceCompatibility = 1.5
-    targetCompatibility = 1.5
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
 
     project.ext.fullProjectName = rootProject.name + '-' + project.name
 
@@ -61,6 +61,25 @@ project(':multicast-listener') {
                 'org.slf4j:slf4j-api:1.7.5',
                 project(':common')
         runtime 'org.slf4j:slf4j-simple:1.7.5'
+    }
+}
+
+project(':rtp-streaming') {
+    apply plugin: 'application'
+
+    mainClassName = 'com.andrewkroh.cicso.rtp.NettyRtpListener'
+
+    dependencies {
+        compile 'com.beust:jcommander:1.29',
+                'org.slf4j:slf4j-api:1.7.5',
+                'org.apache.commons:commons-lang3:3.1',
+                'io.netty:netty-all:4.0.12.Final',
+                project(':common')
+        runtime 'org.slf4j:slf4j-simple:1.7.5'
+    }
+
+    test {
+        jvmArgs '-Djava.net.preferIPv4Stack=true'
     }
 }
 
