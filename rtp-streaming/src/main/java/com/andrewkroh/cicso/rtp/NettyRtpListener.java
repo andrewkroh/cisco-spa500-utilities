@@ -18,6 +18,8 @@ package com.andrewkroh.cicso.rtp;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import com.beust.jcommander.JCommander;
@@ -42,10 +44,16 @@ public class NettyRtpListener
 
         @Parameter(names={"--port", "-p"}, required = true,
                    description = "Local bind port.")
-        private int port;
+        private Integer port;
+
+        @Parameter(names={"--interface", "-i"}, required=false,
+                   description = "Network interface to use for multicast. " +
+                   		         "Must use with --group.")
+        private String multicastInterface;
 
         @Parameter(names={"--group", "-g"}, required = false,
-                   description = "Multicast group to join.")
+                   description = "Multicast group to join. Must use " +
+                   		         "with --interface.")
         private String multicastGroup;
     }
 
@@ -61,7 +69,8 @@ public class NettyRtpListener
         jcommander.usage();
     }
 
-    public static void main(String[] args) throws UnknownHostException
+    public static void main(String[] args)
+            throws UnknownHostException, SocketException
     {
         System.setProperty("java.net.preferIPv4Stack" , "true");
 
@@ -89,13 +98,26 @@ public class NettyRtpListener
             address = new InetSocketAddress(arguments.host, arguments.port);
         }
 
-        if (arguments.multicastGroup == null)
+        if (arguments.multicastInterface == null &&
+                arguments.multicastGroup == null)
         {
             new NettyRtpSession(address);
         }
+        else if (arguments.multicastInterface != null &&
+                arguments.multicastGroup != null)
+        {
+            NetworkInterface mcastInterface =
+                    NetworkInterface.getByName(arguments.multicastInterface);
+
+            InetAddress multicastGroup =
+                    InetAddress.getByName(arguments.multicastGroup);
+
+            new NettyRtpSession(address, mcastInterface, multicastGroup);
+        }
         else
         {
-            new NettyRtpSession(address, InetAddress.getByName(arguments.multicastGroup));
+            printUsage(jcommander);
+            System.exit(1);
         }
     }
 }

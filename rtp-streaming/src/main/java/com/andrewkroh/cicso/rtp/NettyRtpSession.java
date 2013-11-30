@@ -30,6 +30,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -54,8 +55,6 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
 
     private static final int NUM_THREADS = 10;
 
-    private static final String WILDCARD_ADDRESS = "0.0.0.0";
-
     private final Bootstrap bootstrap;
 
     private final DatagramChannel channel;
@@ -65,19 +64,36 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
 
     public NettyRtpSession(final InetSocketAddress bindAddress)
     {
-        this(bindAddress, null);
+        this(bindAddress, null, null);
     }
 
     public NettyRtpSession(final InetSocketAddress bindAddress,
+                           final NetworkInterface multicastInterface,
                            final InetAddress multicastGroup)
     {
         Preconditions.checkNotNull(bindAddress, "Must specify a bind address.");
 
+        if (multicastInterface != null)
+        {
+            Preconditions.checkNotNull(multicastGroup,
+                    "When specifying the multicast interface you must " +
+                    "also specify the multicast group.");
+        }
+
         if (multicastGroup != null)
         {
+            Preconditions.checkNotNull(multicastInterface,
+                    "When specifying the multicast group you must also " +
+                    "specify the multicast interface.");
+
+            // Javadoc for Java 7 MulticastChannel states: The channel's
+            // socket should be bound to the wildcard address. If the socket
+            // is bound to a specific address, rather than the wildcard address
+            // then it is implementation specific if multicast datagrams
+            // are received by the socket.
             Preconditions.checkArgument(
-                !WILDCARD_ADDRESS.equals(bindAddress.getAddress().getHostAddress()),
-                "Cannot bind to wildcard address when using multicast.");
+                bindAddress.getAddress().isAnyLocalAddress(),
+                "Must bind to wildcard address when using multicast.");
         }
 
         EventLoopGroup workerGroup = new NioEventLoopGroup(NUM_THREADS);
@@ -87,7 +103,6 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
             .group(workerGroup)
             .channel(NioDatagramChannel.class)
             .option(ChannelOption.SO_REUSEADDR, true)
-            .option(ChannelOption.IP_MULTICAST_TTL, MULTICAST_TTL)
             .localAddress(bindAddress)
             .handler(new ChannelInitializer<Channel>() {
                 @Override
@@ -97,15 +112,27 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
                 }
             });
 
+        if (multicastGroup != null)
+        {
+            bootstrap.option(ChannelOption.IP_MULTICAST_TTL, MULTICAST_TTL);
+
+            // All multicast traffic generated from this channel will be
+            // output from this interface. If not specified it will use the OS
+            // default which may be unpredicatable:
+            bootstrap.option(ChannelOption.IP_MULTICAST_IF, multicastInterface);
+        }
+
         channel = (DatagramChannel) bootstrap.bind().syncUninterruptibly().channel();
 
         LOGGER.info("Session bound to: {}", channel.localAddress());
 
         if (multicastGroup != null)
         {
-            channel.joinGroup(multicastGroup).syncUninterruptibly();
+            channel.joinGroup(multicastGroup, multicastInterface, null).syncUninterruptibly();
 
-            LOGGER.info("Session bound to multicast group: {}", multicastGroup.getHostAddress());
+            LOGGER.info("Session bound to multicast group {} on interface {}.",
+                    multicastGroup.getHostAddress(),
+                    multicastInterface.getDisplayName());
         }
         else
         {

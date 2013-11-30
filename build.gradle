@@ -12,6 +12,10 @@ subprojects {
     apply plugin: 'eclipse'
 
     sourceCompatibility = 1.6
+
+    // Code can compile under 1.6 but MulticastChannel
+    // used by Netty will not be available and multicast
+    // features will not work.
     targetCompatibility = 1.6
 
     project.ext.fullProjectName = rootProject.name + '-' + project.name
