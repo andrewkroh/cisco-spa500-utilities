@@ -31,6 +31,7 @@ import io.netty.util.NetUtil;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -85,6 +86,8 @@ public class NettyRtpSessionTest
      */
     private DatagramChannel clientChannel;
 
+    private final NetworkInterface multicastInterface = NetUtil.LOOPBACK_IF;
+
     /**
      * Session under test.
      */
@@ -114,7 +117,8 @@ public class NettyRtpSessionTest
         clientBootstrap.group(new NioEventLoopGroup())
                        .channel(NioDatagramChannel.class)
                        .option(ChannelOption.SO_REUSEADDR, true)
-                       .localAddress(NetUtil.LOCALHOST4, TestUtils.getFreePort())
+                       .option(ChannelOption.IP_MULTICAST_IF, multicastInterface)
+                       .localAddress(TestUtils.getFreePort())
                        .handler(clientHandler);
 
         clientChannel = (DatagramChannel) clientBootstrap.bind().sync().channel();
@@ -149,9 +153,10 @@ public class NettyRtpSessionTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_multicastWithWildcard_throwsException()
+    public void constructor_multicastWithoutWildcard_throwsException()
     {
-        session = new NettyRtpSession(new InetSocketAddress(TestUtils.getFreePort()),
+        session = new NettyRtpSession(new InetSocketAddress("127.0.0.1", TestUtils.getFreePort()),
+                                      multicastInterface,
                                       multicastIPv4Addr());
     }
 
@@ -159,10 +164,11 @@ public class NettyRtpSessionTest
     public void sendData_toMulticastDestination_packetIsReceived() throws Exception
     {
         InetAddress multicastGroup = multicastIPv4Addr();
-        clientChannel.joinGroup(multicastGroup);
+        clientChannel.joinGroup(multicastGroup, multicastInterface, null);
 
         session = new NettyRtpSession(
-                new InetSocketAddress(NetUtil.LOCALHOST4, TestUtils.getFreePort()),
+                new InetSocketAddress(TestUtils.getFreePort()),
+                multicastInterface,
                 multicastGroup);
         session.addDestination(new Destination(multicastGroup.getHostAddress(),
                                                clientChannel.localAddress().getPort()));
@@ -173,9 +179,8 @@ public class NettyRtpSessionTest
     @Test
     public void sendData_toUnicastDestination_packetIsReceived() throws Exception
     {
-        session = new NettyRtpSession(
-                new InetSocketAddress(NetUtil.LOCALHOST4, TestUtils.getFreePort()));
-        session.addDestination(new Destination(clientChannel.localAddress().getAddress().getHostAddress(),
+        session = new NettyRtpSession(new InetSocketAddress(TestUtils.getFreePort()));
+        session.addDestination(new Destination(NetUtil.LOCALHOST4.getHostAddress(),
                                                clientChannel.localAddress().getPort()));
         session.sendData(new byte[] {PACKET_PAYLOAD_DATA}, PAYLOAD_TYPE, TIMESTAMP);
         assertThatPayloadDataMatches(clientHandler.getOnlyReceivedPacket());
