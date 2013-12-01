@@ -41,7 +41,7 @@ public class Destination
     {
         Preconditions.checkNotNull(host, "Host cannot be null.");
         Preconditions.checkArgument(port > 0 && port <= 65535,
-                "Port number <%s> is not within (0, 65535].");
+                "Port number <%s> is not within (0, 65535].", port);
 
         this.host = host;
         this.port = port;

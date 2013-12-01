@@ -31,7 +31,7 @@ import com.beust.jcommander.ParameterException;
  *
  * @author akroh
  */
-public class NettyRtpListener
+public class NettyRtpSessionMain
 {
     /**
      * Struct containing the command line arguments.
@@ -87,21 +87,21 @@ public class NettyRtpListener
             System.exit(1);
         }
 
-        InetSocketAddress address;
+        InetSocketAddress bindAddress;
 
         if (arguments.host == null)
         {
-            address = new InetSocketAddress(arguments.port);
+            bindAddress = new InetSocketAddress(arguments.port);
         }
         else
         {
-            address = new InetSocketAddress(arguments.host, arguments.port);
+            bindAddress = new InetSocketAddress(arguments.host, arguments.port);
         }
 
         if (arguments.multicastInterface == null &&
                 arguments.multicastGroup == null)
         {
-            new NettyRtpSession(address);
+            new NettyRtpSession(bindAddress);
         }
         else if (arguments.multicastInterface != null &&
                 arguments.multicastGroup != null)
@@ -112,7 +112,7 @@ public class NettyRtpListener
             InetAddress multicastGroup =
                     InetAddress.getByName(arguments.multicastGroup);
 
-            new NettyRtpSession(address, mcastInterface, multicastGroup);
+            new NettyRtpSession(bindAddress, mcastInterface, multicastGroup);
         }
         else
         {

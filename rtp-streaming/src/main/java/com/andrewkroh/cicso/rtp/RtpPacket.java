@@ -22,7 +22,7 @@ import java.util.Random;
  * A straightforward representation of an RTP packet. It can be used
  * to interpret an incoming RTP packet read off the wire or can be used
  * to create an RTP from scratch for sending.
- * 
+ *
  * <p> RTP Header Format:
  * <pre>
  *     0                   1                   2                   3
@@ -38,12 +38,12 @@ import java.util.Random;
  *  |                             ....                              |
  *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- * 
- * <p> 
+ *
+ * <p>
  * If X bit (extension header) is set this will follow the
  * standard RTP header:
  * </p>
- * 
+ *
  * <pre>
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |      defined by profile       |           length              |
@@ -68,7 +68,7 @@ public class RtpPacket
      * Default and standard RTP version number.
      */
     protected static final int DEFAULT_VERSION = 2;
-    
+
     /**
      * RTP version number.
      */
@@ -87,18 +87,18 @@ public class RtpPacket
      * If set, the fixed header is followed by exactly one header extension.
      */
     protected boolean extension = false;
-    
+
     /**
-     * Distinguishing identifier from the first 16 bits of the header 
-     * extension. 
+     * Distinguishing identifier from the first 16 bits of the header
+     * extension.
      */
     protected int extensionHeaderId = 0;
-    
+
     /**
      * Data from the extension header.
      */
     protected byte[] extensionHeaderData = new byte[0];
-    
+
     /**
      * The number of CSRC identifiers that follow the fixed header.
      */
@@ -132,14 +132,14 @@ public class RtpPacket
      * packets may flow through a translator that does.
      */
     protected int sequenceNumber = 0;
-    
-    
+
+
     /**
      * The largest sequence number that can be sent in an RTP packet.
-     * Value is 2^16 - 1. 
+     * Value is 2^16 - 1.
      */
     public static final int MAX_SEQUENCE_NUM = 65535;
-    
+
     /**
      * The timestamp reflects the sampling instant of the first octet in the RTP
      * data packet. The sampling instant must be derived from a clock that
@@ -188,27 +188,27 @@ public class RtpPacket
      * The data payload of this packet.
      */
     protected byte[] payloadData = new byte[0];
-    
+
     public RtpPacket(byte[] rtpPacket)
     {
         readBytes(rtpPacket);
     }
-    
+
     public RtpPacket(int payloadType) throws IllegalArgumentException
     {
         setPayloadType(payloadType);
     }
-    
+
     public RtpPacket()
     {
-        
+
     }
-    
+
     public int getVersion()
     {
         return version;
     }
-    
+
     public void setVersion(int version)
     {
         this.version = version;
@@ -237,41 +237,42 @@ public class RtpPacket
     {
         return extension;
     }
-    
+
     public int getExtensionHeaderId()
     {
         return extensionHeaderId;
     }
-    
+
     public byte[] getExtensionHeaderData()
     {
         return extensionHeaderData;
     }
 
     /**
-     * @param extension the extension to set
+     * @param extensionHeaderId id of the extension header
+     * @param extensionHeaderData extension header data
      */
     public void setExtension(int extensionHeaderId, byte[] extensionHeaderData)
     {
         this.extension = true;
         this.extensionHeaderId = extensionHeaderId;
-        
+
         // Calculate size of extension header data
         // so that it aligns with the 32 bit word
         // boundaries:
         if (extensionHeaderData.length % 4 != 0)
         {
-            this.extensionHeaderData = new byte[extensionHeaderData.length + 
+            this.extensionHeaderData = new byte[extensionHeaderData.length +
                                                 4 - extensionHeaderData.length % 4];
         }
         else
         {
             this.extensionHeaderData = new byte[extensionHeaderData.length];
         }
-        
+
         // Copy the data to the internal array:
-        System.arraycopy(extensionHeaderData, 0, 
-                         this.extensionHeaderData, 0, 
+        System.arraycopy(extensionHeaderData, 0,
+                         this.extensionHeaderData, 0,
                          extensionHeaderData.length);
     }
 
@@ -316,7 +317,7 @@ public class RtpPacket
         {
             throw new IllegalArgumentException("Payload type must be within 0 to 128.");
         }
-        
+
         this.payloadType = payloadType;
     }
 
@@ -330,7 +331,7 @@ public class RtpPacket
 
     /**
      * @param sequenceNumber the sequenceNumber to set
-     * 
+     *
      * @throws Exception if sequence number is greater
      * than 2^16-1 or less than 0
      */
@@ -340,7 +341,7 @@ public class RtpPacket
         {
             throw new IllegalArgumentException("Sequence number must be within 0 to 65535");
         }
-        
+
         this.sequenceNumber = sequenceNumber;
     }
 
@@ -385,17 +386,17 @@ public class RtpPacket
     }
 
     /**
-     * @param csrc the cSRC to set
+     * @param csrcArray the CSRC values to set
      */
     public void setCSRCs(int[] csrcArray) throws IllegalArgumentException
     {
         int count = csrcArray.length;
-        
+
         if (count > 16)
         {
             throw new IllegalArgumentException("CSRC count must be with 0 and 16.");
         }
-        
+
         CSRCCount = (byte)count;
         CSRC = csrcArray;
     }
@@ -411,7 +412,7 @@ public class RtpPacket
     public String toString()
     {
         StringBuffer sb = new StringBuffer();
-        
+
         sb.append("[RTPPacket]\n");
         sb.append("Version: " + version + "\n");
         sb.append("Padding: " + padding + "\n");
@@ -423,32 +424,32 @@ public class RtpPacket
         sb.append("Timestamp: " + timestamp + "\n");
         sb.append("SSRC: " + SSRC + "\n");
         sb.append("Extension Header Id: " + extensionHeaderId + "\n");
-        
+
         return sb.toString();
     }
-    
+
     /**
      * @param rtpPayloadData the rtpData to set
      */
     public void setRtpPayloadData(byte[] rtpPayloadData)
     {
         this.payloadData = new byte[rtpPayloadData.length];
-        
-        System.arraycopy(rtpPayloadData, 0, 
-                         this.payloadData, 0, 
+
+        System.arraycopy(rtpPayloadData, 0,
+                         this.payloadData, 0,
                          rtpPayloadData.length);
     }
 
     public byte[] getBytes()
     {
         int totalHeaderSize = FIXED_HEADER_SIZE + CSRCCount * 4;
-        
+
         if (extension)
         {
             // Increase size for header Id and length:
             totalHeaderSize += 4 + extensionHeaderData.length;
         }
-        
+
         byte[] packet = new byte[totalHeaderSize + payloadData.length];
 
         byte P = (byte) (padding ? 1 : 0);
@@ -473,25 +474,25 @@ public class RtpPacket
         for (int i = 0; i < CSRCCount; i++)
         {
             byte[] csrc = convertIntToBytes(CSRC[i]);
-            System.arraycopy(csrc, 0, 
+            System.arraycopy(csrc, 0,
                              packet, FIXED_HEADER_SIZE + 4 * i,
                              csrc.length);
         }
-        
+
         /* Extension Header */
         if (extension)
         {
             // Extension header identifier:
             packet[FIXED_HEADER_SIZE + CSRCCount * 4] = (byte)((extensionHeaderId & 0xFF00) >> 8);
             packet[FIXED_HEADER_SIZE + CSRCCount * 4 + 1] = (byte)(extensionHeaderId & 0x00FF);
-            
+
             int length = extensionHeaderData.length / 4;
             packet[FIXED_HEADER_SIZE + CSRCCount * 4 + 2] = (byte)((length & 0xFF00) >> 8);
             packet[FIXED_HEADER_SIZE + CSRCCount * 4 + 3] = (byte)(length & 0x00FF);
-            
+
             // Extension header data:
-            System.arraycopy(extensionHeaderData, 0, 
-                             packet, FIXED_HEADER_SIZE + CSRCCount * 4 + 4, 
+            System.arraycopy(extensionHeaderData, 0,
+                             packet, FIXED_HEADER_SIZE + CSRCCount * 4 + 4,
                              extensionHeaderData.length);
         }
 
@@ -500,45 +501,45 @@ public class RtpPacket
 
         return packet;
     }
-    
+
     private byte[] convertIntToBytes(int number)
     {
         // Using big endian (network order):
         byte[] bytes = new byte[4];
-    
+
         bytes[0] = (byte) ((number & 0xff000000) >>> 24);
         bytes[1] = (byte) ((number & 0x00ff0000) >>> 16);
         bytes[2] = (byte) ((number & 0x0000ff00) >>> 8);
         bytes[3] = (byte)  (number & 0x000000ff);
-    
+
         return bytes;
     }
-    
+
     private int convertFourBytesToInt(byte[] bytes, int offset)
     {
-        int number = (bytes[offset] << 24) | 
+        int number = (bytes[offset] << 24) |
                      ((bytes[offset + 1] & 0xFF) << 16) |
-                     ((bytes[offset + 2] & 0xFF) << 8) | 
+                     ((bytes[offset + 2] & 0xFF) << 8) |
                      (bytes[offset + 3] & 0xFF);
-        
+
         return number;
     }
-    
+
     private void readBytes(byte[] rtpPacket)
     {
         version = (rtpPacket[0] & 0xC0) >>> 6;
         padding = (rtpPacket[0] & 0x20) != 0;
         extension = (rtpPacket[0] & 0x10) != 0;
         CSRCCount = rtpPacket[0] & 0x0F;
-        
+
         marker = (rtpPacket[1] & 0x80) != 0;
         payloadType = rtpPacket[1] & 0x7F;
-        
+
         sequenceNumber = ((rtpPacket[2] & 0xFF) << 8) | (rtpPacket[3] & 0xFF);
-        
+
         timestamp = convertFourBytesToInt(rtpPacket, 4);
         SSRC = convertFourBytesToInt(rtpPacket, 8);
-        
+
         int readIndex = 12;
         CSRC = new int[CSRCCount];
         for (int i = 0; i < CSRCCount; i++)
@@ -546,50 +547,50 @@ public class RtpPacket
             CSRC[i] = convertFourBytesToInt(rtpPacket, readIndex);
             readIndex += 4;
         }
-        
+
         // Extension header:
         if (extension)
         {
-            extensionHeaderId = (rtpPacket[readIndex] << 8) | 
+            extensionHeaderId = (rtpPacket[readIndex] << 8) |
                                  rtpPacket[readIndex + 1];
-            
+
             // Length specified the number of 32 bit words in the extension.
-            int length = (rtpPacket[readIndex + 2] << 8) | 
+            int length = (rtpPacket[readIndex + 2] << 8) |
                           rtpPacket[readIndex + 3];
-            
+
             extensionHeaderData = new byte[length * 4];
-            
+
             // Copy the extension data to another array:
-            System.arraycopy(rtpPacket, readIndex + 4, 
-                             extensionHeaderData, 0, 
+            System.arraycopy(rtpPacket, readIndex + 4,
+                             extensionHeaderData, 0,
                              extensionHeaderData.length);
-            
+
             readIndex += 4 + length * 4;
         }
-        
+
         // Payload data - the remaining bytes in the packet are
         // the payload:
         payloadData = new byte[rtpPacket.length - readIndex];
-        
+
         System.arraycopy(rtpPacket, readIndex, payloadData, 0, payloadData.length);
     }
 
     public static void main(String[] args) throws IllegalArgumentException
     {
         Random generator = new Random(19580427);
-        
+
         byte[] rtpExtensionHeaderData = new byte[50];
         for (int i=0; i<50; i++)
         {
             rtpExtensionHeaderData[i] = (byte)(i%256);
         }
-        
+
         byte[] rtpPayloadData = new byte[1000];
         for (int i=0; i<1000; i++)
         {
             rtpPayloadData[i] = (byte)(i%256);
         }
-        
+
         RtpPacket sentPacket = new RtpPacket(101);
         sentPacket.setSequenceNumber(10008);
         sentPacket.setTimestamp(generator.nextInt());
@@ -597,11 +598,11 @@ public class RtpPacket
         sentPacket.setCSRCs(new int[8]);
         sentPacket.setExtension(15, rtpExtensionHeaderData);
         sentPacket.setRtpPayloadData(rtpPayloadData);
-        
+
         System.out.println(sentPacket.toString());
-        
+
         byte[] fullPacket = sentPacket.getBytes();
-        
+
 //        for (int i=0; i<fullPacket.length/10; i+=4)
 //        {
 //            System.out.println(
@@ -610,13 +611,13 @@ public class RtpPacket
 //                    (int)fullPacket[i+2]+" "+
 //                    (int)fullPacket[i+3]);
 //        }
-        
+
         RtpPacket receivedPacket = new RtpPacket(fullPacket);
         System.out.println(receivedPacket.toString());
-        
+
         byte[] receivedExtensionHeaderData = receivedPacket.getExtensionHeaderData();
         byte[] receivedPayloadData = receivedPacket.getRtpPayloadData();
-        
+
         if (rtpExtensionHeaderData.length <= receivedExtensionHeaderData.length)
         {
             for (int i = 0; i < rtpExtensionHeaderData.length; i++)
@@ -627,7 +628,7 @@ public class RtpPacket
                 }
             }
         }
-        
+
         if (rtpPayloadData.length == receivedPayloadData.length)
         {
             for (int i = 0; i < rtpPayloadData.length; i++)

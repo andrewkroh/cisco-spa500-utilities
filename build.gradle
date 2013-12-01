@@ -32,7 +32,8 @@ subprojects {
     }
 
     dependencies {
-        testCompile 'junit:junit:4.+',
+        testCompile 'org.mockito:mockito-all:1.9.5',
+                    'junit:junit:4.+',
                     'org.hamcrest:hamcrest-all:1.3'
     }
 
@@ -71,7 +72,7 @@ project(':multicast-listener') {
 project(':rtp-streaming') {
     apply plugin: 'application'
 
-    mainClassName = 'com.andrewkroh.cicso.rtp.NettyRtpListener'
+    mainClassName = 'com.andrewkroh.cicso.rtp.AudioFileStreamerMain'
 
     dependencies {
         compile 'com.beust:jcommander:1.29',

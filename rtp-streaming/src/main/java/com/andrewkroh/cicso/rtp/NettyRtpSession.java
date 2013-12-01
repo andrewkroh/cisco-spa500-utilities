@@ -216,10 +216,9 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
         Preconditions.checkNotNull(rtpPacket);
         checkNotShutdown();
 
-        ByteBuf buffer = Unpooled.copiedBuffer(rtpPacket.getBytes());
-
         for (Destination destination : destinations)
         {
+            ByteBuf buffer = Unpooled.copiedBuffer(rtpPacket.getBytes());
             channel.writeAndFlush(new DatagramPacket(
                     buffer, destination.getSocketAddress()));
         }

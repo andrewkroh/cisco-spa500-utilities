@@ -47,6 +47,9 @@ import com.andrewkroh.cicso.rtp.NettyRtpSession;
 import com.andrewkroh.cicso.rtp.RtpPacket;
 
 /**
+ * Test for {@link NettyRtpSession}.
+ *
+ * <p/>
  * If this test in running on a machine with IPv4 and IPv6 addresses then
  * it must be run with {@code -Djava.net.preferIPv4Stack=true}. This is needed
  * because the test uses an IPv4 multicast address which cannot be joined
