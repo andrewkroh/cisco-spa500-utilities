@@ -132,7 +132,14 @@ public class NettyRtpSessionTest
     {
         if (session != null)
         {
-            session.shutdown();
+            try
+            {
+                session.shutdown();
+            }
+            catch (IllegalStateException e)
+            {
+                // Ignore already shutdown exceptions.
+            }
         }
 
         if (clientChannel != null)
@@ -184,6 +191,22 @@ public class NettyRtpSessionTest
                                                clientChannel.localAddress().getPort()));
         session.sendData(new byte[] {PACKET_PAYLOAD_DATA}, PAYLOAD_TYPE, TIMESTAMP);
         assertThatPayloadDataMatches(clientHandler.getOnlyReceivedPacket());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void sendData_afterShutdown_throwsException()
+    {
+        session = new NettyRtpSession(new InetSocketAddress(TestUtils.getFreePort()));
+        session.shutdown();
+        session.sendData(new byte[] {PACKET_PAYLOAD_DATA}, PAYLOAD_TYPE, TIMESTAMP);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void shutdown_afterShutdown_throwsException()
+    {
+        session = new NettyRtpSession(new InetSocketAddress(TestUtils.getFreePort()));
+        session.shutdown();
+        session.shutdown();
     }
 
     /**

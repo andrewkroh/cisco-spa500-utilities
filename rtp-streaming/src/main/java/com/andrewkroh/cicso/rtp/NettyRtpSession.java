@@ -141,8 +141,18 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
         }
     }
 
+    /**
+     * Shuts down the session, closes the socket, and cleans up any threads.
+     * Calling any methods on the session after it has been shutdown can result
+     * in undefined behavior.
+     *
+     * @throws IllegalStateException
+     *             if {@code shutdown} has already been called
+     */
     public void shutdown()
     {
+        checkNotShutdown();
+
         try
         {
             channel.close().sync();
@@ -175,6 +185,12 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
         return new HashSet<Destination>(destinations);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException
+     *             if {@code shutdown} has already been called
+     */
     @Override
     public void sendData(byte[] data, int payloadType, long timestamp)
     {
@@ -188,17 +204,24 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
         sendData(packet);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException
+     *             if {@code shutdown} has already been called
+     */
     @Override
     public void sendData(RtpPacket rtpPacket)
     {
         Preconditions.checkNotNull(rtpPacket);
+        checkNotShutdown();
 
         ByteBuf buffer = Unpooled.copiedBuffer(rtpPacket.getBytes());
 
         for (Destination destination : destinations)
         {
-                channel.writeAndFlush(new DatagramPacket(
-                        buffer, destination.getSocketAddress()));
+            channel.writeAndFlush(new DatagramPacket(
+                    buffer, destination.getSocketAddress()));
         }
     }
 
@@ -209,5 +232,21 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
     {
         LOGGER.debug("RtpPacket received from {}, sent to {}: {}",
                 source, receiver, packet);
+    }
+
+    /**
+     * Checks if {@link #shutdown()} has been called and throws an
+     * {@link IllegalStateException} if it has.
+     *
+     * @throws IllegalStateException
+     *             if {@code shutdown} has already been called
+     */
+    private void checkNotShutdown()
+    {
+        if (bootstrap.group().isShuttingDown())
+        {
+            throw new IllegalStateException(
+                    "NettyRtpSession has already been shutdown.");
+        }
     }
 }
