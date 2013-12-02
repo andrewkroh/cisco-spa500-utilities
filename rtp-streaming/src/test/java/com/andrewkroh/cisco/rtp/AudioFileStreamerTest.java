@@ -1,12 +1,9 @@
 package com.andrewkroh.cisco.rtp;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -27,6 +24,7 @@ import org.mockito.internal.util.reflection.Whitebox;
 
 import com.andrewkroh.cicso.rtp.AudioFileStreamer;
 import com.andrewkroh.cicso.rtp.AudioFileStreamer.EncodingType;
+import com.andrewkroh.cicso.rtp.RtpPacket;
 import com.andrewkroh.cicso.rtp.RtpSession;
 
 /**
@@ -71,7 +69,7 @@ public class AudioFileStreamerTest
         assertThat(streamer.getSourceUrl(), equalTo(SONAR_8K_PCM_WAV));
         assertThat(streamer.getOutputPacketLengthMs(), equalTo(20L));
         assertThat((Integer) Whitebox.getInternalState(streamer, "payloadSizeBytes"),
-                greaterThan(0));
+                equalTo(160));
     }
 
     @Test
@@ -120,7 +118,7 @@ public class AudioFileStreamerTest
     {
         streamer.startAsync();
         streamer.awaitRunning(5, TimeUnit.SECONDS);
-        verify(mockRtpSession, timeout(110).times(5)).sendData((byte[])any(), anyInt(), anyLong());
+        verify(mockRtpSession, timeout(110).times(5)).sendData(any(RtpPacket.class));
     }
 
     @Test

@@ -30,7 +30,5 @@ public interface RtpSession
 
     Collection<Destination> getDestinations();
 
-    void sendData(byte[] data, int payloadType, long timestamp);
-
     void sendData(RtpPacket rtpPacket);
 }

@@ -192,25 +192,6 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
      *             if {@code shutdown} has already been called
      */
     @Override
-    public void sendData(byte[] data, int payloadType, long timestamp)
-    {
-        Preconditions.checkNotNull(data);
-
-        RtpPacket packet = new RtpPacket();
-        packet.setRtpPayloadData(data);
-        packet.setTimestamp((int)timestamp);
-        packet.setPayloadType(payloadType);
-
-        sendData(packet);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @throws IllegalStateException
-     *             if {@code shutdown} has already been called
-     */
-    @Override
     public void sendData(RtpPacket rtpPacket)
     {
         Preconditions.checkNotNull(rtpPacket);

@@ -19,6 +19,7 @@ package com.andrewkroh.cicso.rtp;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
@@ -48,7 +49,7 @@ public class AudioFileStreamer extends AbstractScheduledService
     public enum EncodingType
     {
         /**
-         * RFC3551 specifies payload type 8 for PCMA, 8000 Hz, 1 channel.
+         * RFC3551 specifies payload type 8 for PCMA (G.711), 8000 Hz, 1 channel.
          */
         ALAW(8),
 
@@ -99,6 +100,11 @@ public class AudioFileStreamer extends AbstractScheduledService
     private final long outputPacketLengthMs;
 
     /**
+     * Number of samples in one packet.
+     */
+    private final int numSamplesPerPacket;
+
+    /**
      * Payload size of a single packet given in bytes.
      */
     private final int payloadSizeBytes;
@@ -118,6 +124,24 @@ public class AudioFileStreamer extends AbstractScheduledService
      * URL of the source file.
      */
     private final URL sourceUrl;
+
+    private final Random randomNumberGen = new Random();
+
+    /**
+     * SSRC that is used in RtpPackets.
+     */
+    private final int ssrc = randomNumberGen.nextInt();
+
+    /**
+     * Timestamp that is used in RtpPackets. Per RFC3550 the timestamp
+     * is initialized to a random value.
+     */
+    private int timestamp = randomNumberGen.nextInt();
+
+    /**
+     * Sequence number that is used in RtpPackets.
+     */
+    private int sequenceNumber = 0;
 
     /**
      * Constructs a new AudioFileStreamer whose source data will be read from
@@ -175,7 +199,7 @@ public class AudioFileStreamer extends AbstractScheduledService
         outputStream.read(sourceDataBuffer.array(), 0, sourceDataBuffer.capacity());
 
         // Calculate packet size:
-        int numSamplesPerPacket = getNumberOfSamplesPerTimePeriod(outputFormat,
+        numSamplesPerPacket = getNumberOfSamplesPerTimePeriod(outputFormat,
                 outputPacketLengthMs, TimeUnit.MILLISECONDS);
         int sampleSizeBytes = outputStream.getFormat().getSampleSizeInBits() / 8;
         payloadSizeBytes = numSamplesPerPacket * sampleSizeBytes;
@@ -206,7 +230,7 @@ public class AudioFileStreamer extends AbstractScheduledService
     /**
      * Returns the RtpSession used for streaming data.
      *
-     * @return RtpSession used fro streaming data
+     * @return RtpSession used for streaming data
      */
     public RtpSession getRtpSession()
     {
@@ -262,10 +286,16 @@ public class AudioFileStreamer extends AbstractScheduledService
             packetDataBuffer.put(sourceDataBuffer.get());
         }
 
-        // TODO: investigate the proper timestamp
-        rtpSession.sendData(packetDataBuffer.array(),
-                            outputEncodingType.getPayloadType(),
-                            System.currentTimeMillis());
+        timestamp += numSamplesPerPacket;
+
+        RtpPacket packet = new RtpPacket();
+        packet.setPayloadType(outputEncodingType.getPayloadType());
+        packet.setSSRC(ssrc);
+        packet.setSequenceNumber(++sequenceNumber);
+        packet.setTimestamp(timestamp);
+        packet.setRtpPayloadData(packetDataBuffer.array());
+
+        rtpSession.sendData(packet);
     }
 
     /**

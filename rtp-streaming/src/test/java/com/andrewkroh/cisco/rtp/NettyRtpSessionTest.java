@@ -89,6 +89,8 @@ public class NettyRtpSessionTest
      */
     private DatagramChannel clientChannel;
 
+    private RtpPacket rtpPacket;
+
     private final NetworkInterface multicastInterface = NetUtil.LOOPBACK_IF;
 
     /**
@@ -125,6 +127,11 @@ public class NettyRtpSessionTest
                        .handler(clientHandler);
 
         clientChannel = (DatagramChannel) clientBootstrap.bind().sync().channel();
+
+        rtpPacket = new RtpPacket();
+        rtpPacket.setPayloadType(PAYLOAD_TYPE);
+        rtpPacket.setRtpPayloadData(new byte[]{PACKET_PAYLOAD_DATA});
+        rtpPacket.setTimestamp(TIMESTAMP);
     }
 
     /**
@@ -182,7 +189,7 @@ public class NettyRtpSessionTest
                 multicastGroup);
         session.addDestination(new Destination(multicastGroup.getHostAddress(),
                                                clientChannel.localAddress().getPort()));
-        session.sendData(new byte[] {PACKET_PAYLOAD_DATA}, PAYLOAD_TYPE, TIMESTAMP);
+        session.sendData(rtpPacket);
         assertThatPayloadDataMatches(clientHandler.getOnlyReceivedPacket());
     }
 
@@ -192,7 +199,7 @@ public class NettyRtpSessionTest
         session = new NettyRtpSession(new InetSocketAddress(TestUtils.getFreePort()));
         session.addDestination(new Destination(NetUtil.LOCALHOST4.getHostAddress(),
                                                clientChannel.localAddress().getPort()));
-        session.sendData(new byte[] {PACKET_PAYLOAD_DATA}, PAYLOAD_TYPE, TIMESTAMP);
+        session.sendData(rtpPacket);
         assertThatPayloadDataMatches(clientHandler.getOnlyReceivedPacket());
     }
 
@@ -201,7 +208,7 @@ public class NettyRtpSessionTest
     {
         session = new NettyRtpSession(new InetSocketAddress(TestUtils.getFreePort()));
         session.shutdown();
-        session.sendData(new byte[] {PACKET_PAYLOAD_DATA}, PAYLOAD_TYPE, TIMESTAMP);
+        session.sendData(rtpPacket);
     }
 
     @Test(expected = IllegalStateException.class)
