@@ -27,6 +27,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,13 +119,17 @@ public class AudioFileStreamer extends AbstractScheduledService
      * {@code ByteBuffer} containing the source's complete audio data in
      * the output encoding.
      */
-    private final ByteBuffer sourceDataBuffer;
+    private final ByteBuffer outputDataBuffer;
 
     /**
      * URL of the source file.
      */
     private final URL sourceUrl;
 
+    /**
+     * Random number generator used to generate the starting
+     * values for fields within RTP packets.
+     */
     private final Random randomNumberGen = new Random();
 
     /**
@@ -195,8 +200,7 @@ public class AudioFileStreamer extends AbstractScheduledService
         LOGGER.debug("Output format: {}", audioFormatToString(outputFormat));
 
         // Buffer the output data:
-        sourceDataBuffer = ByteBuffer.allocate(outputStream.available());
-        outputStream.read(sourceDataBuffer.array(), 0, sourceDataBuffer.capacity());
+        outputDataBuffer = ByteBuffer.wrap(IOUtils.toByteArray(outputStream));
 
         // Calculate packet size:
         numSamplesPerPacket = getNumberOfSamplesPerTimePeriod(outputFormat,
@@ -269,7 +273,7 @@ public class AudioFileStreamer extends AbstractScheduledService
 
     /**
      * Sends a single packet of audio data. It reads from the
-     * {@link #sourceDataBuffer} and will rewind that buffer when it reaches the
+     * {@link #outputDataBuffer} and will rewind that buffer when it reaches the
      * end so that it continuously streams the source file in a loop.
      */
     private void sendAudioData()
@@ -278,12 +282,12 @@ public class AudioFileStreamer extends AbstractScheduledService
 
         while (packetDataBuffer.hasRemaining())
         {
-            if (!sourceDataBuffer.hasRemaining())
+            if (!outputDataBuffer.hasRemaining())
             {
-                sourceDataBuffer.rewind();
+                outputDataBuffer.rewind();
             }
 
-            packetDataBuffer.put(sourceDataBuffer.get());
+            packetDataBuffer.put(outputDataBuffer.get());
         }
 
         timestamp += numSamplesPerPacket;

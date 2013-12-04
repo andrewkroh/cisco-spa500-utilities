@@ -70,12 +70,12 @@ public class AudioFileStreamerMain
         private String outputEncoding = "ulaw";
 
         @Parameter(names={"--length", "-l"},
-                description = "Length of the data contained in streamed RTP " +
-                		      "packets given in milliseconds.")
+                   description = "Length of the data contained in streamed RTP " +
+                		         "packets given in milliseconds.")
         private int packetLengthMs = 20 ;
 
         @Parameter(names={"--file", "-f"},
-                description = "Source wave file that will be streamed.")
+                   description = "Source wave file that will be streamed.")
         private String sourceFile;
 
         @Parameter(names={"--destinations", "-d"},
@@ -83,6 +83,10 @@ public class AudioFileStreamerMain
                    description = "Stream destinations separated by spaces. " +
                    		         "Format destinations as host:port.")
         private List<String> destinations;
+
+        @Parameter(names="--whitenoise",
+                   description = "Stream white noise as the audio source.")
+        private boolean useWhiteNoise = false;
     }
 
     private static EncodingType parseEncoding(String encoding)
@@ -189,9 +193,17 @@ public class AudioFileStreamerMain
 
         // --- Source URL ---
         URL sourceUrl = null;
-        if (arguments.sourceFile != null)
+        if (arguments.sourceFile != null || arguments.useWhiteNoise)
         {
-            sourceUrl = new File(arguments.sourceFile).toURI().toURL();
+            if (arguments.sourceFile != null)
+            {
+                sourceUrl = new File(arguments.sourceFile).toURI().toURL();
+            }
+            else
+            {
+                sourceUrl = AudioFileStreamer.class.getResource(
+                        "/wavs/white-noise-quiet.wav");
+            }
 
             // --- Destinations ---
             if (arguments.destinations != null && !arguments.destinations.isEmpty())

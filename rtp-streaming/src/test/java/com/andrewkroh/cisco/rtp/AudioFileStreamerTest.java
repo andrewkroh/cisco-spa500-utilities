@@ -65,7 +65,7 @@ public class AudioFileStreamerTest
     {
         assertNotNull(streamer.getRtpSession());
         assertNotNull(streamer.getOutputFormat());
-        assertNotNull(Whitebox.getInternalState(streamer, "sourceDataBuffer"));
+        assertNotNull(Whitebox.getInternalState(streamer, "outputDataBuffer"));
         assertThat(streamer.getSourceUrl(), equalTo(SONAR_8K_PCM_WAV));
         assertThat(streamer.getOutputPacketLengthMs(), equalTo(20L));
         assertThat((Integer) Whitebox.getInternalState(streamer, "payloadSizeBytes"),
