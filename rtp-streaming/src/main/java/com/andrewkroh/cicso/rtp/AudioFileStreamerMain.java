@@ -53,13 +53,15 @@ public class AudioFileStreamerMain
         private int port = 22222;
 
         @Parameter(names={"--interface", "-i"},
-                   description = "Network interface to use for multicast. " +
-                   		         "Must use with --group.")
+                   description = "Network interface to use as the source when " +
+                   		         "sending multicast packets. Translates to " +
+                   		         "the IP_MULTICAST_IF socket option.")
         private String multicastInterface;
 
         @Parameter(names={"--group", "-g"},
-                   description = "Multicast group to join. Must use " +
-                   		         "with --interface.")
+                   description = "Multicast group to join. Must also specify " +
+                   		         "the interface on which to join the group " +
+                   		         "(see --interface).")
         private String multicastGroup;
 
         @Parameter(names={"--encoding", "-e"},
@@ -67,11 +69,16 @@ public class AudioFileStreamerMain
                    		         "Options are alaw, ulaw, pcm16.")
         private String outputEncoding = "ulaw";
 
-        @Parameter(names={"--file", "-f"}, required = true,
+        @Parameter(names={"--length", "-l"},
+                description = "Length of the data contained in streamed RTP " +
+                		      "packets given in milliseconds.")
+        private int packetLengthMs = 20 ;
+
+        @Parameter(names={"--file", "-f"},
                 description = "Source wave file that will be streamed.")
         private String sourceFile;
 
-        @Parameter(names={"--destinations", "-d"}, required = true,
+        @Parameter(names={"--destinations", "-d"},
                    variableArity = true,
                    description = "Stream destinations separated by spaces. " +
                    		         "Format destinations as host:port.")
@@ -144,6 +151,7 @@ public class AudioFileStreamerMain
         }
         catch (ParameterException e)
         {
+            System.out.println("Invalid parameter");
             printUsage(jcommander);
             System.exit(1);
         }
@@ -159,64 +167,57 @@ public class AudioFileStreamerMain
             bindAddress = new InetSocketAddress(arguments.host, arguments.port);
         }
 
-        // --- RtpSession ---
-        RtpSession rtpSession = null;
-        if (arguments.multicastInterface == null &&
-                arguments.multicastGroup == null)
+        // --- Multicast interface ---
+        NetworkInterface mcastInterface = null;
+        if (arguments.multicastInterface != null)
         {
-            rtpSession = new NettyRtpSession(bindAddress);
-        }
-        else if (arguments.multicastInterface != null &&
-                arguments.multicastGroup != null)
-        {
-            NetworkInterface mcastInterface =
+            mcastInterface =
                     NetworkInterface.getByName(arguments.multicastInterface);
-
-            InetAddress multicastGroup =
-                    InetAddress.getByName(arguments.multicastGroup);
-
-            rtpSession = new NettyRtpSession(bindAddress, mcastInterface, multicastGroup);
         }
-        else
+
+        // --- Multicast group ---
+        InetAddress multicastGroup = null;
+        if (arguments.multicastGroup != null)
         {
-            printUsage(jcommander);
-            System.exit(1);
+            multicastGroup =
+                    InetAddress.getByName(arguments.multicastGroup);
         }
+
+        // --- RtpSession ---
+        RtpSession rtpSession =
+                new NettyRtpSession(bindAddress, mcastInterface, multicastGroup);
 
         // --- Source URL ---
         URL sourceUrl = null;
         if (arguments.sourceFile != null)
         {
             sourceUrl = new File(arguments.sourceFile).toURI().toURL();
-        }
-        else
-        {
-            printUsage(jcommander);
-            System.exit(1);
-        }
 
-        // --- Destinations ---
-        if (arguments.destinations != null && !arguments.destinations.isEmpty())
-        {
-            List<Destination> destinations = parseDestinations(arguments.destinations);
-
-            for (Destination destination : destinations)
+            // --- Destinations ---
+            if (arguments.destinations != null && !arguments.destinations.isEmpty())
             {
-                rtpSession.addDestination(destination);
+                List<Destination> destinations = parseDestinations(arguments.destinations);
+
+                for (Destination destination : destinations)
+                {
+                    rtpSession.addDestination(destination);
+                }
             }
-        }
-        else
-        {
-            printUsage(jcommander);
-            System.exit(1);
-        }
+            else
+            {
+                System.out.println("You must specify at least one " +
+                		"destination (see --destination).");
+                printUsage(jcommander);
+                System.exit(1);
+            }
 
-        // --- EncodingType ---
-        EncodingType encodingType = parseEncoding(arguments.outputEncoding);
+            // --- EncodingType ---
+            EncodingType encodingType = parseEncoding(arguments.outputEncoding);
 
-        // --- Start Streaming ---
-        AudioFileStreamer streamer = new AudioFileStreamer(
-                sourceUrl, encodingType, 20, rtpSession);
-        streamer.startAsync().awaitRunning();
+            // --- Start Streaming ---
+            AudioFileStreamer streamer = new AudioFileStreamer(sourceUrl,
+                    encodingType, arguments.packetLengthMs, rtpSession);
+            streamer.startAsync().awaitRunning();
+        }
     }
 }

@@ -73,13 +73,6 @@ public class NettyRtpSession implements RtpSession, RtpPacketListener
     {
         Preconditions.checkNotNull(bindAddress, "Must specify a bind address.");
 
-        if (multicastInterface != null)
-        {
-            Preconditions.checkNotNull(multicastGroup,
-                    "When specifying the multicast interface you must " +
-                    "also specify the multicast group.");
-        }
-
         if (multicastGroup != null)
         {
             Preconditions.checkNotNull(multicastInterface,
