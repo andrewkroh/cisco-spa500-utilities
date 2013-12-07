@@ -28,6 +28,7 @@ import org.junit.Test;
 import com.cisco.xmlservices.generated.CiscoIPPhoneDirectoryEntryType;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecuteItemType;
+import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
 
 /**
  * Test for {@link XmlMarshaller}.
@@ -47,6 +48,14 @@ public class XmlMarshallerTest
             "<CiscoIPPhoneExecute>" +
                 "<ExecuteItem Priority=\"-1\" URL=\"http://localhost/test.xml\"/>" +
             "</CiscoIPPhoneExecute>";
+
+    private static final String RESPONSE_FROM_PHONE =
+            "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>" +
+            "<CiscoIPPhoneResponse>" +
+              "<ResponseItem Status=\"0\" Data=\"\" URL=\"http://host/test.xml\"/>" +
+              "<ResponseItem Status=\"0\" Data=\"\" URL=\"\"/>" +
+              "<ResponseItem Status=\"0\" Data=\"\" URL=\"\"/>" +
+            "</CiscoIPPhoneResponse>";
 
     private static final String URL = "http://localhost/test.xml";
 
@@ -135,9 +144,13 @@ public class XmlMarshallerTest
     @Test(expected = ClassCastException.class)
     public void unmarshall_wrongClassType_throwsException()
     {
-//        @SuppressWarnings("unused")
-//        CiscoIPPhoneDirectoryEntryType dirType =
-                XmlMarshaller.unmarshal(VALID_CISCO_EXECUTE,
-                                         CiscoIPPhoneDirectoryEntryType.class);
+        XmlMarshaller.unmarshal(VALID_CISCO_EXECUTE,
+                                 CiscoIPPhoneDirectoryEntryType.class);
+    }
+
+    public void unmarshall_ciscoIPPhoneResponse()
+    {
+        XmlMarshaller.unmarshal(RESPONSE_FROM_PHONE,
+                                CiscoIPPhoneResponse.class);
     }
 }

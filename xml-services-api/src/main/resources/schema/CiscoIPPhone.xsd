@@ -20,23 +20,21 @@
     </xsd:attribute>
   </xsd:complexType>
   <xsd:complexType name="CiscoIPPhoneResponseItemType">
-    <xsd:sequence>
-      <xsd:element name="Status" type="xsd:short"/>
-      <xsd:element name="Data">
-        <xsd:simpleType>
-          <xsd:restriction base="xsd:string">
-            <xsd:maxLength value="32"/>
-          </xsd:restriction>
-        </xsd:simpleType>
-      </xsd:element>
-      <xsd:element name="URL">
-        <xsd:simpleType>
-          <xsd:restriction base="xsd:string">
-            <xsd:maxLength value="256"/>
-          </xsd:restriction>
-        </xsd:simpleType>
-      </xsd:element>
-    </xsd:sequence>
+    <xsd:attribute name="Status" type="xsd:short"/>
+    <xsd:attribute name="Data">
+      <xsd:simpleType>
+        <xsd:restriction base="xsd:string">
+          <xsd:maxLength value="32"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+    </xsd:attribute>
+    <xsd:attribute name="URL">
+      <xsd:simpleType>
+        <xsd:restriction base="xsd:string">
+          <xsd:maxLength value="256"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+    </xsd:attribute>
   </xsd:complexType>
   <xsd:complexType name="CiscoIPPhoneTouchAreaMenuItemType">
     <xsd:sequence>
@@ -401,7 +399,7 @@
       </xsd:sequence>
     </xsd:complexType>
   </xsd:element>
-  <xsd:element name="CiscoIPhoneResponse">
+  <xsd:element name="CiscoIPPhoneResponse">
     <xsd:complexType>
       <xsd:sequence>
         <xsd:element name="ResponseItem" type="CiscoIPPhoneResponseItemType" maxOccurs="3"/>
