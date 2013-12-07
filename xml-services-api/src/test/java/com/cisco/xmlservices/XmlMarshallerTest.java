@@ -148,6 +148,7 @@ public class XmlMarshallerTest
                                  CiscoIPPhoneDirectoryEntryType.class);
     }
 
+    @Test
     public void unmarshall_ciscoIPPhoneResponse()
     {
         XmlMarshaller.unmarshal(RESPONSE_FROM_PHONE,
