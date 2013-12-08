@@ -16,37 +16,38 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
-import org.junit.Test;
-
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.NetUtil;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.UnsupportedAudioFileException;
-
 import org.junit.After;
-import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.internal.util.reflection.Whitebox;
 
-
-import com.andrewkroh.cisco.xmlservices.DefaultCiscoXmlPushService;
+import com.andrewkroh.cisco.common.TestUtils;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecuteItemType;
 import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
+import com.cisco.xmlservices.generated.CiscoIPPhoneResponseItemType;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  *
@@ -54,43 +55,187 @@ import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
  */
 public class DefaultCiscoXmlPushServiceTest
 {
+    private final EventLoopGroup bossGroup = new NioEventLoopGroup();
+
+    private final EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+    private final HttpTestServerHandler testServerHandler =
+            new HttpTestServerHandler();
+
+    private final ServerBootstrap bootstrap;
+
+    private final Channel channel;
+
+    private final DefaultCiscoXmlPushService pushService;
+
+    private static final String TEST_URL = "http://localhost/test";
+
+    public DefaultCiscoXmlPushServiceTest()
+            throws InterruptedException, TimeoutException
+    {
+        bootstrap = new ServerBootstrap()
+            .group(bossGroup, workerGroup)
+            .localAddress(new InetSocketAddress(NetUtil.LOCALHOST,
+                                                TestUtils.getFreePort()))
+            .channel(NioServerSocketChannel.class)
+            .childHandler(new HttpTestServerInitializer(testServerHandler));
+
+        channel = bootstrap.bind().sync().channel();
+
+        System.out.println("Server on " + channel.localAddress());
+
+        pushService = new DefaultCiscoXmlPushService();
+        pushService.startAsync().awaitRunning(10, TimeUnit.SECONDS);
+    }
+
+    @After
+    public void cleanup() throws TimeoutException
+    {
+        pushService.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+    }
 
     @Test
-    public void sendMessageToPhone() throws InterruptedException,
-        ExecutionException, TimeoutException
+    public void submitCommand_returnedFutureContainsResponse()
+            throws InterruptedException, ExecutionException, TimeoutException
+    {
+        // Configure response from test server:
+        final CiscoIPPhoneResponse serverResponse =
+                buildCiscoIPPhoneResponse(5, TEST_URL);
+        testServerHandler.setResponse(serverResponse);
+
+        // Send request to server:
+        final CiscoIpPhone phone = mockPhone();
+        ListenableFuture<CiscoXmlPushResponse> receivedFuture =
+                pushService.submitCommand(phone,
+                                          buildCiscoIPPhoneExecute());
+
+        // Wait for server response:
+        CiscoXmlPushResponse receivedResponse =
+                receivedFuture.get(10, TimeUnit.SECONDS);
+
+        // Validate response:
+        assertThat(receivedResponse, notNullValue());
+        assertThat(receivedResponse.getPhone(), equalTo(phone));
+        assertResponseEquals(serverResponse, receivedResponse.getResponse());
+    }
+
+    @Test
+    public void submitCommand_toBadAddress_returnedFutureContainsException()
+            throws InterruptedException, TimeoutException
+    {
+        final CiscoIpPhone phone = mockPhoneWithWrongPort();
+        ListenableFuture<CiscoXmlPushResponse> receivedFuture =
+                pushService.submitCommand(phone,
+                                          buildCiscoIPPhoneExecute());
+
+        try
+        {
+            receivedFuture.get(10, TimeUnit.SECONDS);
+            fail("Expected ExecutionException");
+        }
+        catch (ExecutionException e)
+        {
+            assertThat(e.getCause(), instanceOf(IOException.class));
+        }
+    }
+
+    @Ignore("Need to add timeout feature to client.")
+    @Test
+    public void submitCommon_returnedFutureTimesoutWithException()
+            throws InterruptedException, TimeoutException
+    {
+        final CiscoIpPhone phone = mockPhone();
+        ListenableFuture<CiscoXmlPushResponse> receivedFuture =
+                pushService.submitCommand(phone,
+                                          buildCiscoIPPhoneExecute());
+
+        try
+        {
+            receivedFuture.get(20, TimeUnit.SECONDS);
+            fail("Expected ExecutionException");
+        }
+        catch (ExecutionException e)
+        {
+            assertThat(e.getCause(), instanceOf(TimeoutException.class));
+        }
+    }
+
+    private CiscoIpPhone mockPhoneWithWrongPort()
+    {
+        CiscoIpPhone phone = mockPhone();
+        when(phone.getPort()).thenReturn(TestUtils.getFreePort());
+        return phone;
+    }
+
+    private CiscoIpPhone mockPhone()
     {
         CiscoIpPhone mockPhone = mock(CiscoIpPhone.class);
-        when(mockPhone.getHostname()).thenReturn("spa502g-ext103.voice.va.crowbird.com");
-        when(mockPhone.getPort()).thenReturn(80);
         when(mockPhone.getUsername()).thenReturn("admin");
-        when(mockPhone.getPassword()).thenReturn("103");
+        when(mockPhone.getPassword()).thenReturn("pass");
 
-        CiscoIPPhoneExecute execute = new CiscoIPPhoneExecute();
-        CiscoIPPhoneExecuteItemType executeItem = new CiscoIPPhoneExecuteItemType();
+        if (channel.localAddress() instanceof InetSocketAddress)
+        {
+            InetSocketAddress address =
+                    (InetSocketAddress) channel.localAddress();
+            when(mockPhone.getHostname()).thenReturn(
+                    address.getAddress().getHostAddress());
+            when(mockPhone.getPort()).thenReturn(
+                    address.getPort());
+        }
+        else
+        {
+            throw new IllegalArgumentException(
+                    "SocketAddress is not a InetSocketAddress.");
+        }
+
+        return mockPhone;
+    }
+
+    private CiscoIPPhoneExecute buildCiscoIPPhoneExecute()
+    {
+        CiscoIPPhoneExecute executeJaxbObject =
+                new CiscoIPPhoneExecute();
+        CiscoIPPhoneExecuteItemType executeItem =
+                new CiscoIPPhoneExecuteItemType();
         executeItem.setPriority((short) 0);
-        executeItem.setURL("http://va.crowbird.com:28080/phones/tx_unicast.php");
-        execute.getExecuteItem().add(executeItem);
+        executeItem.setURL(TEST_URL);
+        executeJaxbObject.getExecuteItem().add(executeItem);
+        return executeJaxbObject;
+    }
 
-        CiscoIpPhone mockPhone104 = mock(CiscoIpPhone.class);
-        when(mockPhone104.getHostname()).thenReturn("spa502g-ext104.voice.va.crowbird.com");
-        when(mockPhone104.getPort()).thenReturn(80);
-        when(mockPhone104.getUsername()).thenReturn("admin");
-        when(mockPhone104.getPassword()).thenReturn("104");
+    private CiscoIPPhoneResponse buildCiscoIPPhoneResponse(int status, String url)
+    {
+        CiscoIPPhoneResponse response = new CiscoIPPhoneResponse();
+        CiscoIPPhoneResponseItemType responseItem =
+                new CiscoIPPhoneResponseItemType();
+        responseItem.setStatus((short) status);
+        responseItem.setData("");
+        responseItem.setURL(url);
+        response.getResponseItem().add(responseItem);
+        return response;
+    }
 
-        CiscoIPPhoneExecute execute104 = new CiscoIPPhoneExecute();
-        executeItem = new CiscoIPPhoneExecuteItemType();
-        executeItem.setPriority((short) 0);
-        executeItem.setURL("http://va.crowbird.com:28080/phones/tx_unicast.php");
-        execute104.getExecuteItem().add(executeItem);
+    private void assertResponseEquals(CiscoIPPhoneResponse expected,
+            CiscoIPPhoneResponse observed)
+    {
+        assertNotNull(expected);
+        assertNotNull(observed);
 
-        DefaultCiscoXmlPushService service = new DefaultCiscoXmlPushService();
-        service.startAsync().awaitRunning();
-        System.out.println("Running.");
-        Future<CiscoIPPhoneResponse> responseFuture =
-                service.submitCommand(mockPhone, execute);
-        Future<CiscoIPPhoneResponse> responseFuture104 =
-                service.submitCommand(mockPhone104, execute104);
-        assertNotNull(responseFuture.get(20, TimeUnit.SECONDS));
-        assertNotNull(responseFuture104.get(20, TimeUnit.SECONDS));
+        assertEquals(expected.getResponseItem().size(), observed.getResponseItem().size());
+        for (int i = 0; i < expected.getResponseItem().size(); i++)
+        {
+            assertResponseItemEqual(expected.getResponseItem().get(i),
+                      observed.getResponseItem().get(i));
+        }
+    }
+
+    private void assertResponseItemEqual(CiscoIPPhoneResponseItemType expected,
+                                         CiscoIPPhoneResponseItemType observed)
+    {
+        assertThat(expected.getData(), equalTo(observed.getData()));
+        assertThat(expected.getStatus(), equalTo(observed.getStatus()));
+        assertThat(expected.getURL(), equalTo(observed.getURL()));
     }
 }

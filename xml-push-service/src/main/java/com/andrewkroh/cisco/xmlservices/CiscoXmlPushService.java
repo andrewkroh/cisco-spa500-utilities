@@ -16,11 +16,9 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
-import java.util.List;
-import java.util.concurrent.Future;
-
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
-import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * This represents XML service interface running on a Cisco IP Phones. It allows
@@ -28,7 +26,7 @@ import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
  * POST.
  *
  * <p/>
- * Typical usage of this command is to trigger an action by the phone, such as
+ * Typical usage of this command is for triggering an action by the phone, such as
  * start streaming audio data, start receiving audio data, or display a
  * menu/prompt. In order to display a menu you submit the URL of the menu to the
  * phone and it makes a HTTP GET request for that URL.
@@ -44,9 +42,9 @@ import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
  */
 public interface CiscoXmlPushService
 {
-    Future<CiscoIPPhoneResponse> submitCommand(CiscoIpPhone phone,
-                                               CiscoIPPhoneExecute command);
+    ListenableFuture<CiscoXmlPushResponse> submitCommand(
+            CiscoIpPhone phone, CiscoIPPhoneExecute command);
 
-    List<Future<CiscoIPPhoneResponse>> submitCommand(List<CiscoIpPhone> phones,
-                                                     CiscoIPPhoneExecute command);
+    ImmutableList<ListenableFuture<CiscoXmlPushResponse>> submitCommand(
+            ImmutableList<CiscoIpPhone> phones, CiscoIPPhoneExecute command);
 }

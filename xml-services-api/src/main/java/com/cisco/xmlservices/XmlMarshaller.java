@@ -85,8 +85,13 @@ public final class XmlMarshaller
     private static ValidationEventHandler validator =
             new SchemaValidationHandler();
 
+    // Eagerly initialize the JAXB content:
+    static {
+        initJaxb();
+    }
+
     /**
-     * Method which lazily initializes the JAXB context.
+     * Method which initializes the JAXB context.
      */
     private static synchronized void initJaxb()
     {

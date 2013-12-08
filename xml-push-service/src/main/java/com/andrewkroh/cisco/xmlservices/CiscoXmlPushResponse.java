@@ -16,38 +16,26 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
+import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
+
 /**
- * Interface for accessing information about a Cisco IP phone.
+ * Interface for responses to XML push requests to a phone.
  *
  * @author akroh
  */
-public interface CiscoIpPhone
+public interface CiscoXmlPushResponse
 {
     /**
-     * Gets the hostname (or IP) of the phone.
+     * Gets the phone that generated the response.
      *
-     * @return hostname or IP address of the phone
+     * @return the phone that generated the response
      */
-    String getHostname();
+    CiscoIpPhone getPhone();
 
     /**
-     * Gets the port used by the phone HTTP interface.
+     * The response object from the phone.
      *
-     * @return the phones HTTP port
+     * @return the response object from the phone
      */
-    int getPort();
-
-    /**
-     * Gets the username for authenticating to the phone.
-     *
-     * @return the username for authenticating to the phone
-     */
-    String getUsername();
-
-    /**
-     * Gets the password for authenticating to the phone.
-     *
-     * @return the password for authenticating to the phone
-     */
-    String getPassword();
+    CiscoIPPhoneResponse getResponse();
 }
