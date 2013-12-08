@@ -89,6 +89,21 @@ project(':rtp-streaming') {
     }
 }
 
+project(':xml-push-service') {
+    apply plugin: 'java'
+
+    dependencies {
+        compile 'org.slf4j:slf4j-api:1.7.5',
+                'org.apache.commons:commons-lang3:3.1',
+                'commons-codec:commons-codec:1.8',
+                'io.netty:netty-all:4.0.12.Final',
+                project(':common'),
+                project(':xml-services-api')
+
+        runtime 'org.slf4j:slf4j-simple:1.7.5'
+    }
+}
+
 project(':xml-services-api') {
     apply plugin: 'java'
 

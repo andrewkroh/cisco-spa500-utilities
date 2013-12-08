@@ -1,4 +1,5 @@
 include ':common'
 include ':multicast-listener'
 include ':rtp-streaming'
+include ':xml-push-service'
 include ':xml-services-api'
