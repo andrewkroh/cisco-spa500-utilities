@@ -1,3 +1,6 @@
+// Flag which indicates that the build is running in Jenkins:
+ext.isJenkins = System.env.BUILD_NUMBER != null
+
 allprojects {
     repositories {
         mavenCentral()
@@ -59,8 +62,8 @@ subprojects {
     // Enable HTML reports from FindBugs:
     tasks.withType(FindBugs) {
         reports {
-            xml.enabled = false
-            html.enabled = true
+            xml.enabled = rootProject.ext.isJenkins
+            html.enabled = !rootProject.ext.isJenkins
         }
     }
 }
