@@ -1,3 +1,6 @@
+// Flag which indicates that the build is running in Jenkins:
+ext.isJenkins = System.env.BUILD_NUMBER != null
+
 allprojects {
     repositories {
         mavenCentral()
@@ -10,6 +13,8 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'eclipse'
+    apply plugin: 'findbugs'
+    apply plugin: 'pmd'
 
     sourceCompatibility = 1.6
 
@@ -37,13 +42,30 @@ subprojects {
                     'org.hamcrest:hamcrest-all:1.3'
     }
 
+    findbugs {
+        ignoreFailures = true
+    }
+
+    pmd {
+        ignoreFailures = true
+    }
+
     // Override the names of generated archives:
     project.tasks.withType(AbstractArchiveTask).each {
         AbstractArchiveTask task ->
         task.baseName = project.ext.fullProjectName
     }
 
+    // Override the name of Eclipse projects:
     eclipse.project.name = project.ext.fullProjectName
+
+    // Enable HTML reports from FindBugs:
+    tasks.withType(FindBugs) {
+        reports {
+            xml.enabled = rootProject.ext.isJenkins
+            html.enabled = !rootProject.ext.isJenkins
+        }
+    }
 }
 
 
@@ -52,7 +74,8 @@ subprojects {
 // --------------------------
 project(':common') {
     dependencies {
-        compile 'com.google.guava:guava:15.0'
+        compile 'com.google.guava:guava:15.0',
+                'io.netty:netty-all:4.0.12.Final'
     }
 }
 
@@ -81,11 +104,27 @@ project(':rtp-streaming') {
                 'io.netty:netty-all:4.0.12.Final',
                 'org.apache.commons:commons-io:1.3.2',
                 project(':common')
+
         runtime 'org.slf4j:slf4j-simple:1.7.5'
     }
 
     test {
         jvmArgs '-Djava.net.preferIPv4Stack=true'
+    }
+}
+
+project(':xml-push-service') {
+    apply plugin: 'java'
+
+    dependencies {
+        compile 'org.slf4j:slf4j-api:1.7.5',
+                'org.apache.commons:commons-lang3:3.1',
+                'commons-codec:commons-codec:1.8',
+                'io.netty:netty-all:4.0.12.Final',
+                project(':common'),
+                project(':xml-services-api')
+
+        runtime 'org.slf4j:slf4j-simple:1.7.5'
     }
 }
 
