@@ -32,17 +32,44 @@ import com.cisco.xmlservices.XmlMarshaller;
 import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
 import com.google.common.util.concurrent.SettableFuture;
 
+/**
+ * Inbound channel handler that is responsible for unmarshaling the
+ * XML response from the phone.
+ *
+ * @author akroh
+ */
 @Sharable
 public class CiscoXmlResponseChannelHandler extends
         SimpleChannelInboundHandler<HttpObject>
 {
+    /**
+     * SLF4J logger for this class.
+     */
     private static final Logger LOGGER =
             LoggerFactory.getLogger(CiscoXmlResponseChannelHandler.class);
 
+    /**
+     * {@link AttributeKey} for reading the {@link CiscoIpPhone} object
+     * from the {@code Channel}.
+     */
     private final AttributeKey<CiscoIpPhone> phoneAttributeKey;
 
+    /**
+     * {@link AttributeKey} for reading the {@link SettableFuture} object
+     * from the {@code Channel}.
+     */
     private final AttributeKey<SettableFuture<CiscoXmlPushResponse>> responseAttributeKey;
 
+    /**
+     * Constructs a new CiscoXmlResponseChannelHandler.
+     *
+     * @param phoneAttributeKey
+     *            {@code AttributeKey} for reading the {@code CiscoIpPhone}
+     *            object from the {@code Channel}
+     * @param responseAttributeKey
+     *            {@code AttributeKey} for reading the {@code SettableFuture}
+     *            object form the {@code Channel}
+     */
     public CiscoXmlResponseChannelHandler(
             AttributeKey<CiscoIpPhone> phoneAttributeKey,
             AttributeKey<SettableFuture<CiscoXmlPushResponse>> responseAttributeKey)

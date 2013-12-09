@@ -28,8 +28,16 @@ import io.netty.handler.logging.LoggingHandler;
 
 import com.google.common.base.Preconditions;
 
+/**
+ * Boilerplate {@link ChannelInitializer} for HTTP.
+ *
+ * @author akroh
+ */
 public class HttpClientInitializer extends ChannelInitializer<SocketChannel>
 {
+    /**
+     * Final handler in the pipeline.
+     */
     private final ChannelInboundHandler handler;
 
     public HttpClientInitializer(ChannelInboundHandler handler)

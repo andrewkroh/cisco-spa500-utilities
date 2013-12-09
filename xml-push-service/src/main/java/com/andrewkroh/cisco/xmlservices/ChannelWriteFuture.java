@@ -39,6 +39,9 @@ class ChannelWriteFuture<T> implements ChannelFutureListener
     private static final Logger LOGGER =
             LoggerFactory.getLogger(ChannelWriteFuture.class);
 
+    /**
+     * SettableFuture to notify upon failure.
+     */
     private final SettableFuture<T> responseFuture;
 
     /**

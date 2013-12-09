@@ -24,6 +24,11 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 
+/**
+ * Initializer for the TestServer which simulates a Cisco IP phone.
+ *
+ * @author akroh
+ */
 public class HttpTestServerInitializer extends
         ChannelInitializer<SocketChannel>
 {

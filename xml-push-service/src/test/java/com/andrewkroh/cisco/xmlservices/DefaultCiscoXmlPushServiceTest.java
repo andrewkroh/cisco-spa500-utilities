@@ -54,11 +54,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
 /**
+ * Test for {@link DefaultCiscoXmlPushService}.
  *
  * @author akroh
  */
 public class DefaultCiscoXmlPushServiceTest
 {
+    /**
+     * A test server for simulated a real Cisco IP phone.
+     */
     private static class TestServer
     {
         private final EventLoopGroup bossGroup = new NioEventLoopGroup();

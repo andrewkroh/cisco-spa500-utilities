@@ -38,6 +38,12 @@ import com.google.common.util.concurrent.Atomics;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
+/**
+ * Inbound channel handler for simulating a Cisco IP phone. This handler is
+ * <strong>not</strong> sharable because it contains state.
+ *
+ * @author akroh
+ */
 public class HttpTestServerHandler extends SimpleChannelInboundHandler<Object>
 {
     private final SettableFuture<HttpRequest> httpRequestFuture =
