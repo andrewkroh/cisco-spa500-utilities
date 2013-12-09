@@ -57,35 +57,32 @@ public class CiscoXmlResponseChannelHandler extends
     {
         CiscoIpPhone phone = ctx.channel().attr(phoneAttributeKey).get();
 
-        if (msg instanceof HttpResponse)
+        if (msg instanceof HttpResponse && LOGGER.isDebugEnabled())
         {
-            if (LOGGER.isDebugEnabled())
+            HttpResponse response = (HttpResponse) msg;
+
+            StringBuilder responseInfo = new StringBuilder();
+            responseInfo.append("Source=");
+            responseInfo.append(phone.getHostname());
+            responseInfo.append(", ");
+            responseInfo.append("Status=");
+            responseInfo.append(response.getStatus());
+            responseInfo.append(", ");
+            responseInfo.append("Version=");
+            responseInfo.append(response.getProtocolVersion());
+
+            for (String name : response.headers().names())
             {
-                HttpResponse response = (HttpResponse) msg;
-
-                StringBuilder responseInfo = new StringBuilder();
-                responseInfo.append("Source=");
-                responseInfo.append(phone.getHostname());
-                responseInfo.append(", ");
-                responseInfo.append("Status=");
-                responseInfo.append(response.getStatus());
-                responseInfo.append(", ");
-                responseInfo.append("Version=");
-                responseInfo.append(response.getProtocolVersion());
-
-                for (String name : response.headers().names())
+                for (String value : response.headers().getAll(name))
                 {
-                    for (String value : response.headers().getAll(name))
-                    {
-                        responseInfo.append(", ");
-                        responseInfo.append(name);
-                        responseInfo.append('=');
-                        responseInfo.append(value);
-                    }
+                    responseInfo.append(", ");
+                    responseInfo.append(name);
+                    responseInfo.append('=');
+                    responseInfo.append(value);
                 }
-
-                LOGGER.debug(responseInfo.toString());
             }
+
+            LOGGER.debug(responseInfo.toString());
         }
 
         if (msg instanceof HttpContent)
@@ -105,6 +102,10 @@ public class CiscoXmlResponseChannelHandler extends
             CiscoIPPhoneResponse xmlResponse =
                 XmlMarshaller.unmarshal(xmlContent, CiscoIPPhoneResponse.class);
             responseFuture.set(new DefaultCiscoXmlPushResponse(phone, xmlResponse));
+
+            // Cleanup:
+            ctx.close();
+            ctx.channel().close();
         }
     }
 
@@ -121,6 +122,9 @@ public class CiscoXmlResponseChannelHandler extends
         SettableFuture<CiscoXmlPushResponse> responseFuture = ctx.channel()
                 .attr(responseAttributeKey).get();
         responseFuture.setException(cause);
+
+        // Cleanup:
         ctx.close();
+        ctx.channel().close();
     }
 }

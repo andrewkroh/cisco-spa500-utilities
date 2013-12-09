@@ -22,6 +22,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -37,6 +38,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -54,6 +56,8 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.SettableFuture;
 
 /**
+ * Implementation of the {@link CiscoXmlPushService} that uses Netty under the
+ * hood to issue the requests to phones.
  *
  * @author akroh
  */
@@ -66,6 +70,17 @@ public class DefaultCiscoXmlPushService extends AbstractService
     private static final Logger LOGGER =
             LoggerFactory.getLogger(DefaultCiscoXmlPushService.class);
 
+    /**
+     * Default socket connect timeout.
+     */
+    private static final int DEFAULT_CONNECT_TIMEOUT_MS =
+            (int) TimeUnit.SECONDS.toMillis(10);
+
+    /**
+     * Default timeout period for returned {@code Future}s.
+     */
+    private static final int DEFAULT_RESPONSE_TIMEOUT_MS =
+            (int) TimeUnit.SECONDS.toMillis(20);
     /**
      * {@code AttributeKey} used to obtain the {@link CiscoIpPhone} object from
      * its associated {@code Channel} using {@link Channel#attr(AttributeKey)}.
@@ -92,10 +107,25 @@ public class DefaultCiscoXmlPushService extends AbstractService
      */
     private static final Charset ENCODING = Charsets.UTF_8;
 
+    private final long connectTimeoutMs;
+
+    private final long responseTimeoutMs;
+
     /**
      * Netty {@link Bootstrap} used for client connections.
      */
     private Bootstrap bootstrap;
+
+    public DefaultCiscoXmlPushService()
+    {
+        this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_RESPONSE_TIMEOUT_MS);
+    }
+
+    public DefaultCiscoXmlPushService(int connectTimeoutMs, int responseTimeoutMs)
+    {
+        this.connectTimeoutMs = connectTimeoutMs;
+        this.responseTimeoutMs = responseTimeoutMs;
+    }
 
     @Override
     protected void doStart()
@@ -106,6 +136,7 @@ public class DefaultCiscoXmlPushService extends AbstractService
         bootstrap = new Bootstrap();
         bootstrap.group(new NioEventLoopGroup())
                  .channel(NioSocketChannel.class)
+                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeoutMs)
                  .handler(new HttpClientInitializer(handler))
                  .validate();
 
@@ -134,7 +165,6 @@ public class DefaultCiscoXmlPushService extends AbstractService
 
         final HttpRequest httpRequest = buildRequest(phone.getHostname(),
                 phone.getUsername(), phone.getPassword(), command);
-        System.out.println("Request to send: " + httpRequest);
 
         final SettableFuture<CiscoXmlPushResponse> responseFuture =
                 SettableFuture.create();
@@ -145,7 +175,9 @@ public class DefaultCiscoXmlPushService extends AbstractService
                 new ChannelConnectListener<CiscoXmlPushResponse>(
                         httpRequest,
                         PHONE_KEY, phone,
-                        PUSH_RESP_KEY, responseFuture));
+                        PUSH_RESP_KEY, responseFuture,
+                        bootstrap.group(),
+                        responseTimeoutMs));
 
         return responseFuture;
     }

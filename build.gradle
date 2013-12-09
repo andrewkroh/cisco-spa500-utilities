@@ -10,6 +10,8 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'eclipse'
+    apply plugin: 'findbugs'
+    apply plugin: 'pmd'
 
     sourceCompatibility = 1.6
 
@@ -37,13 +39,30 @@ subprojects {
                     'org.hamcrest:hamcrest-all:1.3'
     }
 
+    findbugs {
+        ignoreFailures = true
+    }
+
+    pmd {
+        ignoreFailures = true
+    }
+
     // Override the names of generated archives:
     project.tasks.withType(AbstractArchiveTask).each {
         AbstractArchiveTask task ->
         task.baseName = project.ext.fullProjectName
     }
 
+    // Override the name of Eclipse projects:
     eclipse.project.name = project.ext.fullProjectName
+
+    // Enable HTML reports from FindBugs:
+    tasks.withType(FindBugs) {
+        reports {
+            xml.enabled = false
+            html.enabled = true
+        }
+    }
 }
 
 
