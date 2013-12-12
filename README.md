@@ -2,12 +2,12 @@ cisco-spa500-utilities ![Build Status](https://blog.crowbird.com/build-status/ci
 ======================
 - Author: Andrew Kroh
 - License: Apache License, Version 2.0
-- Requirements: Java 1.5+
+- Requirements: Java 1.6+ (1.7 is required if you want to use multicast streaming)
 
 How do I build it?
 ------------------
 
-    ./gradlew clean jar test javadoc
+    ./gradlew clean build javadoc
 
 That will build the project using Gradle. It uses the Gradle wrapper
 to automatically download the correct version of Gradle and execute the build.
