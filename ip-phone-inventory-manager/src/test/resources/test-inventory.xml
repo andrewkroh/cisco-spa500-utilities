@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PhoneInventory>
+    <phone>
+        <hostname>spa502g-ext1001.voice.local</hostname>
+        <port>80</port>
+        <username>admin</username>
+        <password>pass</password>
+    </phone>
+    <phone>
+        <hostname>spa502g-ext1002.voice.local</hostname>
+        <port>80</port>
+        <username>admin</username>
+        <password>pass</password>
+    </phone>
+</PhoneInventory>
+

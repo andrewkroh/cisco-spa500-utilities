@@ -16,9 +16,11 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
+import com.andrewkroh.cisco.phoneinventory.IpPhone;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Service;
 
 /**
  * This represents XML service interface running on a Cisco IP Phones. It allows
@@ -40,11 +42,21 @@ import com.google.common.util.concurrent.ListenableFuture;
  *
  * @author akroh
  */
-public interface CiscoXmlPushService
+public interface XmlPushService extends Service
 {
-    ListenableFuture<CiscoXmlPushResponse> submitCommand(
-            CiscoIpPhone phone, CiscoIPPhoneExecute command);
+    ListenableFuture<XmlPushResponse> submitCommand(
+            IpPhone phone, CiscoIPPhoneExecute command);
 
-    ImmutableList<ListenableFuture<CiscoXmlPushResponse>> submitCommand(
-            ImmutableList<CiscoIpPhone> phones, CiscoIPPhoneExecute command);
+    ListenableFuture<XmlPushResponse> submitCommand(
+            IpPhone phone, CiscoIPPhoneExecute command,
+            XmlPushCallback commandCallback);
+
+    ImmutableList<ListenableFuture<XmlPushResponse>> submitCommand(
+            ImmutableList<IpPhone> phones, CiscoIPPhoneExecute command);
+
+    ImmutableList<ListenableFuture<XmlPushResponse>> submitCommand(
+            ImmutableList<IpPhone> phones, CiscoIPPhoneExecute command,
+            XmlPushCallback commandCallback);
+
+    boolean unregisterCallback(XmlPushCallback commandCallback);
 }

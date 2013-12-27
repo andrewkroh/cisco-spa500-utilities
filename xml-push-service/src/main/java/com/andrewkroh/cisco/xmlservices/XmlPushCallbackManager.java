@@ -16,26 +16,11 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
-import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
-
-/**
- * Interface for responses to XML push requests to a phone.
- *
- * @author akroh
- */
-public interface CiscoXmlPushResponse
+public interface XmlPushCallbackManager
 {
-    /**
-     * Gets the phone that generated the response.
-     *
-     * @return the phone that generated the response
-     */
-    CiscoIpPhone getPhone();
+    Object getCallback(String id);
 
-    /**
-     * The response object from the phone.
-     *
-     * @return the response object from the phone
-     */
-    CiscoIPPhoneResponse getResponse();
+    String registerCallback(XmlPushCallback commandCallback);
+
+    boolean unregisterCallback(XmlPushCallback commandCallback);
 }

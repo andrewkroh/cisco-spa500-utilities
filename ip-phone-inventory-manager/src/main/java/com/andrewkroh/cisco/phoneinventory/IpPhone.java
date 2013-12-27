@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.andrewkroh.cisco.xmlservices;
+package com.andrewkroh.cisco.phoneinventory;
 
 /**
  * Interface for accessing information about a Cisco IP phone.
  *
  * @author akroh
  */
-public interface CiscoIpPhone
+public interface IpPhone
 {
     /**
      * Gets the hostname (or IP) of the phone.

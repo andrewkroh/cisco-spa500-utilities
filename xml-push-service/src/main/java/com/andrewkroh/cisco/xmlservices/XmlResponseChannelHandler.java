@@ -28,6 +28,7 @@ import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewkroh.cisco.phoneinventory.IpPhone;
 import com.cisco.xmlservices.XmlMarshaller;
 import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
 import com.google.common.util.concurrent.SettableFuture;
@@ -39,40 +40,40 @@ import com.google.common.util.concurrent.SettableFuture;
  * @author akroh
  */
 @Sharable
-public class CiscoXmlResponseChannelHandler extends
+public class XmlResponseChannelHandler extends
         SimpleChannelInboundHandler<HttpObject>
 {
     /**
      * SLF4J logger for this class.
      */
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(CiscoXmlResponseChannelHandler.class);
+            LoggerFactory.getLogger(XmlResponseChannelHandler.class);
 
     /**
-     * {@link AttributeKey} for reading the {@link CiscoIpPhone} object
+     * {@link AttributeKey} for reading the {@link IpPhone} object
      * from the {@code Channel}.
      */
-    private final AttributeKey<CiscoIpPhone> phoneAttributeKey;
+    private final AttributeKey<IpPhone> phoneAttributeKey;
 
     /**
      * {@link AttributeKey} for reading the {@link SettableFuture} object
      * from the {@code Channel}.
      */
-    private final AttributeKey<SettableFuture<CiscoXmlPushResponse>> responseAttributeKey;
+    private final AttributeKey<SettableFuture<XmlPushResponse>> responseAttributeKey;
 
     /**
      * Constructs a new CiscoXmlResponseChannelHandler.
      *
      * @param phoneAttributeKey
-     *            {@code AttributeKey} for reading the {@code CiscoIpPhone}
+     *            {@code AttributeKey} for reading the {@code IpPhone}
      *            object from the {@code Channel}
      * @param responseAttributeKey
      *            {@code AttributeKey} for reading the {@code SettableFuture}
      *            object form the {@code Channel}
      */
-    public CiscoXmlResponseChannelHandler(
-            AttributeKey<CiscoIpPhone> phoneAttributeKey,
-            AttributeKey<SettableFuture<CiscoXmlPushResponse>> responseAttributeKey)
+    public XmlResponseChannelHandler(
+            AttributeKey<IpPhone> phoneAttributeKey,
+            AttributeKey<SettableFuture<XmlPushResponse>> responseAttributeKey)
     {
         this.phoneAttributeKey = phoneAttributeKey;
         this.responseAttributeKey = responseAttributeKey;
@@ -82,7 +83,7 @@ public class CiscoXmlResponseChannelHandler extends
     public void channelRead0(ChannelHandlerContext ctx, HttpObject msg)
             throws Exception
     {
-        CiscoIpPhone phone = ctx.channel().attr(phoneAttributeKey).get();
+        IpPhone phone = ctx.channel().attr(phoneAttributeKey).get();
 
         if (msg instanceof HttpResponse && LOGGER.isDebugEnabled())
         {
@@ -116,7 +117,7 @@ public class CiscoXmlResponseChannelHandler extends
         {
             HttpContent content = (HttpContent) msg;
 
-            SettableFuture<CiscoXmlPushResponse> responseFuture =
+            SettableFuture<XmlPushResponse> responseFuture =
                     ctx.channel().attr(responseAttributeKey).get();
 
             // The default charset for HTTP is ISO-8859-1. None
@@ -128,7 +129,7 @@ public class CiscoXmlResponseChannelHandler extends
 
             CiscoIPPhoneResponse xmlResponse =
                 XmlMarshaller.unmarshal(xmlContent, CiscoIPPhoneResponse.class);
-            responseFuture.set(new DefaultCiscoXmlPushResponse(phone, xmlResponse));
+            responseFuture.set(new DefaultXmlPushResponse(phone, xmlResponse));
 
             // Cleanup:
             ctx.close();
@@ -142,11 +143,11 @@ public class CiscoXmlResponseChannelHandler extends
     {
         if (LOGGER.isWarnEnabled())
         {
-            CiscoIpPhone phone = ctx.channel().attr(phoneAttributeKey).get();
+            IpPhone phone = ctx.channel().attr(phoneAttributeKey).get();
             LOGGER.warn("Exception in handler for {}.", phone.getHostname());
         }
 
-        SettableFuture<CiscoXmlPushResponse> responseFuture = ctx.channel()
+        SettableFuture<XmlPushResponse> responseFuture = ctx.channel()
                 .attr(responseAttributeKey).get();
         responseFuture.setException(cause);
 

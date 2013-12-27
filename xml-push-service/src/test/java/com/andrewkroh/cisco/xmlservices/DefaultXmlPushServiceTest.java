@@ -17,6 +17,7 @@
 package com.andrewkroh.cisco.xmlservices;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
@@ -24,7 +25,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -46,19 +49,23 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 
 import com.andrewkroh.cisco.common.TestUtils;
+import com.andrewkroh.cisco.phoneinventory.IpPhone;
+import com.cisco.xmlservices.XmlMarshaller;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecuteItemType;
 import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
 import com.cisco.xmlservices.generated.CiscoIPPhoneResponseItemType;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 /**
- * Test for {@link DefaultCiscoXmlPushService}.
+ * Test for {@link DefaultXmlPushService}.
  *
  * @author akroh
  */
-public class DefaultCiscoXmlPushServiceTest
+public class DefaultXmlPushServiceTest
 {
     /**
      * A test server for simulated a real Cisco IP phone.
@@ -104,23 +111,51 @@ public class DefaultCiscoXmlPushServiceTest
         {
             testServerHandler.setResponse(ciscoJaxbObject);
         }
+
+        public ListenableFuture<CiscoIPPhoneExecute> getCiscoIPPhoneExecute()
+        {
+            Function<String, CiscoIPPhoneExecute> transformFunc =
+              new Function<String, CiscoIPPhoneExecute>() {
+                public CiscoIPPhoneExecute apply(String xmlContent)
+                {
+                    return XmlMarshaller.unmarshal(
+                            xmlContent,
+                            CiscoIPPhoneExecute.class);
+                }
+            };
+            return Futures.transform(testServerHandler.getReceivedHttpRequest(),
+                                     transformFunc);
+        }
     }
+
+    private static final String TEST_URL = "http://localhost/test";
+
+    private static final String TEST_CALLBACK_URL =
+            "http://localhost/phones/$CALLBACKID/get";
+
+    private static final String CALLBACK_ID = "12345";
 
     @Rule
     public final Timeout globalTimeout = new Timeout(10000);
 
     private final TestServer testServer;
 
-    private final DefaultCiscoXmlPushService pushService;
+    private final DefaultXmlPushService pushService;
 
-    private static final String TEST_URL = "http://localhost/test";
+    private final XmlPushCallback callback = mock(XmlPushCallback.class);
 
-    public DefaultCiscoXmlPushServiceTest()
+    private final XmlPushCallbackManager callbackManager =
+            mock(XmlPushCallbackManager.class);
+
+    public DefaultXmlPushServiceTest()
             throws InterruptedException, TimeoutException
     {
         testServer = new TestServer();
-        pushService = new DefaultCiscoXmlPushService(1000, 1000);
+        pushService = new DefaultXmlPushService(callbackManager, 1000, 1000);
         pushService.startAsync().awaitRunning(10, TimeUnit.SECONDS);
+
+        when(callbackManager.registerCallback(any(XmlPushCallback.class))).
+            thenReturn(CALLBACK_ID);
     }
 
     @After
@@ -140,13 +175,13 @@ public class DefaultCiscoXmlPushServiceTest
         testServer.setResponse(serverResponse);
 
         // Send request to server:
-        final CiscoIpPhone phone = mockPhone(testServer);
-        ListenableFuture<CiscoXmlPushResponse> receivedFuture =
+        final IpPhone phone = mockPhone(testServer);
+        ListenableFuture<XmlPushResponse> receivedFuture =
                 pushService.submitCommand(phone,
-                                          buildCiscoIPPhoneExecute());
+                                          buildCiscoIPPhoneExecute(TEST_URL));
 
         // Wait for server response:
-        CiscoXmlPushResponse receivedResponse = receivedFuture.get();
+        XmlPushResponse receivedResponse = receivedFuture.get();
 
         // Validate response:
         assertThat(receivedResponse, notNullValue());
@@ -155,13 +190,34 @@ public class DefaultCiscoXmlPushServiceTest
     }
 
     @Test
+    public void submitCommand_withCallback_receivedUrlContainsCallbackId()
+            throws InterruptedException, ExecutionException, TimeoutException
+    {
+        // Configure response from test server:
+        final CiscoIPPhoneResponse serverResponse =
+                buildCiscoIPPhoneResponse(5, TEST_URL);
+        testServer.setResponse(serverResponse);
+
+        // Send request to server:
+        pushService.submitCommand(mockPhone(testServer),
+                buildCiscoIPPhoneExecute(TEST_CALLBACK_URL), callback);
+
+        verify(callbackManager).registerCallback(callback);
+
+        // Verify that the callback ID was substituted:
+        CiscoIPPhoneExecute command = testServer.getCiscoIPPhoneExecute().get();
+        assertThat(command.getExecuteItem().get(0).getURL(),
+                   containsString(CALLBACK_ID));
+    }
+
+    @Test
     public void submitCommand_toBadAddress_returnedFutureContainsException()
             throws InterruptedException, TimeoutException
     {
-        final CiscoIpPhone phone = mockPhoneWithWrongPort();
-        ListenableFuture<CiscoXmlPushResponse> receivedFuture =
+        final IpPhone phone = mockPhoneWithWrongPort();
+        ListenableFuture<XmlPushResponse> receivedFuture =
                 pushService.submitCommand(phone,
-                                          buildCiscoIPPhoneExecute());
+                                          buildCiscoIPPhoneExecute(TEST_URL));
 
         try
         {
@@ -178,10 +234,10 @@ public class DefaultCiscoXmlPushServiceTest
     public void submitCommon_returnedFutureTimesoutWithException()
             throws InterruptedException, TimeoutException, ExecutionException
     {
-        final CiscoIpPhone phone = mockPhone(testServer);
-        ListenableFuture<CiscoXmlPushResponse> receivedFuture =
+        final IpPhone phone = mockPhone(testServer);
+        ListenableFuture<XmlPushResponse> receivedFuture =
                 pushService.submitCommand(phone,
-                                          buildCiscoIPPhoneExecute());
+                                          buildCiscoIPPhoneExecute(TEST_URL));
 
         receivedFuture.get();
     }
@@ -194,22 +250,22 @@ public class DefaultCiscoXmlPushServiceTest
         final CiscoIPPhoneResponse serverResponse =
                 buildCiscoIPPhoneResponse(5, TEST_URL);
         testServer.setResponse(serverResponse);
-        final CiscoIpPhone phone = mockPhone(testServer);
+        final IpPhone phone = mockPhone(testServer);
 
         // Add a second server for this test:
         TestServer secondServer = new TestServer();
         secondServer.setResponse(serverResponse);
-        final CiscoIpPhone secondPhone = mockPhone(secondServer);
+        final IpPhone secondPhone = mockPhone(secondServer);
 
         // Send request to server:
-        ImmutableList<ListenableFuture<CiscoXmlPushResponse>> receivedFutures =
+        ImmutableList<ListenableFuture<XmlPushResponse>> receivedFutures =
                 pushService.submitCommand(ImmutableList.of(phone, secondPhone),
-                                          buildCiscoIPPhoneExecute());
+                                          buildCiscoIPPhoneExecute(TEST_URL));
 
         assertThat(receivedFutures, hasSize(2));
 
         // Validate first response:
-        CiscoXmlPushResponse receivedResponse = receivedFutures.get(0).get();
+        XmlPushResponse receivedResponse = receivedFutures.get(0).get();
         assertThat(receivedResponse, notNullValue());
         assertThat(receivedResponse.getPhone(), equalTo(phone));
         assertResponseEquals(serverResponse, receivedResponse.getResponse());
@@ -223,9 +279,16 @@ public class DefaultCiscoXmlPushServiceTest
         secondServer.shutdown();
     }
 
-    private CiscoIpPhone mockPhoneWithWrongPort()
+    @Test
+    public void unregisterCallback_invokesCallbackManager()
     {
-        CiscoIpPhone phone = mock(CiscoIpPhone.class);
+        pushService.unregisterCallback(callback);
+        verify(callbackManager).unregisterCallback(callback);
+    }
+
+    private IpPhone mockPhoneWithWrongPort()
+    {
+        IpPhone phone = mock(IpPhone.class);
         when(phone.getUsername()).thenReturn("admin");
         when(phone.getPassword()).thenReturn("pass");
         when(phone.getHostname()).thenReturn(NetUtil.LOCALHOST.getHostAddress());
@@ -233,9 +296,9 @@ public class DefaultCiscoXmlPushServiceTest
         return phone;
     }
 
-    private CiscoIpPhone mockPhone(TestServer toServer)
+    private IpPhone mockPhone(TestServer toServer)
     {
-        CiscoIpPhone mockPhone = mock(CiscoIpPhone.class);
+        IpPhone mockPhone = mock(IpPhone.class);
         when(mockPhone.getUsername()).thenReturn("admin");
         when(mockPhone.getPassword()).thenReturn("pass");
 
@@ -257,14 +320,14 @@ public class DefaultCiscoXmlPushServiceTest
         return mockPhone;
     }
 
-    private CiscoIPPhoneExecute buildCiscoIPPhoneExecute()
+    private CiscoIPPhoneExecute buildCiscoIPPhoneExecute(String url)
     {
         CiscoIPPhoneExecute executeJaxbObject =
                 new CiscoIPPhoneExecute();
         CiscoIPPhoneExecuteItemType executeItem =
                 new CiscoIPPhoneExecuteItemType();
         executeItem.setPriority((short) 0);
-        executeItem.setURL(TEST_URL);
+        executeItem.setURL(url);
         executeJaxbObject.getExecuteItem().add(executeItem);
         return executeJaxbObject;
     }

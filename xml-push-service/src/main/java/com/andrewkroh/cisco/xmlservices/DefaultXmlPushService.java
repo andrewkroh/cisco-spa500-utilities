@@ -40,12 +40,17 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
+import javax.enterprise.inject.Default;
+import javax.inject.Inject;
+
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewkroh.cisco.phoneinventory.IpPhone;
 import com.cisco.xmlservices.XmlMarshaller;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
+import com.cisco.xmlservices.generated.CiscoIPPhoneExecuteItemType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -54,21 +59,23 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.SettableFuture;
+import com.rits.cloning.Cloner;
 
 /**
- * Implementation of the {@link CiscoXmlPushService} that uses Netty under the
+ * Implementation of the {@link XmlPushService} that uses Netty under the
  * hood to issue the requests to phones.
  *
  * @author akroh
  */
-public class DefaultCiscoXmlPushService extends AbstractService
-    implements CiscoXmlPushService
+@Default
+public class DefaultXmlPushService extends AbstractService
+    implements XmlPushService
 {
     /**
      * SLF4J logger for this class.
      */
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(DefaultCiscoXmlPushService.class);
+            LoggerFactory.getLogger(DefaultXmlPushService.class);
 
     /**
      * Default socket connect timeout.
@@ -82,19 +89,19 @@ public class DefaultCiscoXmlPushService extends AbstractService
     private static final int DEFAULT_RESPONSE_TIMEOUT_MS =
             (int) TimeUnit.SECONDS.toMillis(20);
     /**
-     * {@code AttributeKey} used to obtain the {@link CiscoIpPhone} object from
+     * {@code AttributeKey} used to obtain the {@link IpPhone} object from
      * its associated {@code Channel} using {@link Channel#attr(AttributeKey)}.
      */
-    private static final AttributeKey<CiscoIpPhone> PHONE_KEY =
+    private static final AttributeKey<IpPhone> PHONE_KEY =
             AttributeKey.valueOf("PHONE_KEY");
 
     /**
      * {@code AttributeKey} used to obtain the {@link SettableFuture} object
      * from its associated {@code Channel} using
      * {@link Channel#attr(AttributeKey)}. The {@code SettableFuture} is used to
-     * return the {@link CiscoXmlPushResponse} from the asynchronous call.
+     * return the {@link XmlPushResponse} from the asynchronous call.
      */
-    private static final AttributeKey<SettableFuture<CiscoXmlPushResponse>> PUSH_RESP_KEY =
+    private static final AttributeKey<SettableFuture<XmlPushResponse>> PUSH_RESP_KEY =
             AttributeKey.valueOf("PUSH_RESP_KEY");
 
     /**
@@ -107,6 +114,14 @@ public class DefaultCiscoXmlPushService extends AbstractService
      */
     private static final Charset ENCODING = Charsets.UTF_8;
 
+    /**
+     * Utility for deep cloning objects. Used on the mutable
+     * JAXB objects.
+     */
+    private static final Cloner CLONER = new Cloner();
+
+    private final XmlPushCallbackManager callbackManager;
+
     private final long connectTimeoutMs;
 
     private final long responseTimeoutMs;
@@ -116,13 +131,17 @@ public class DefaultCiscoXmlPushService extends AbstractService
      */
     private Bootstrap bootstrap;
 
-    public DefaultCiscoXmlPushService()
+    @Inject
+    public DefaultXmlPushService(XmlPushCallbackManager callbackManager)
     {
-        this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_RESPONSE_TIMEOUT_MS);
+        this(callbackManager, DEFAULT_CONNECT_TIMEOUT_MS,
+                DEFAULT_RESPONSE_TIMEOUT_MS);
     }
 
-    public DefaultCiscoXmlPushService(int connectTimeoutMs, int responseTimeoutMs)
+    public DefaultXmlPushService(XmlPushCallbackManager callbackManager,
+            int connectTimeoutMs, int responseTimeoutMs)
     {
+        this.callbackManager = callbackManager;
         this.connectTimeoutMs = connectTimeoutMs;
         this.responseTimeoutMs = responseTimeoutMs;
     }
@@ -130,7 +149,7 @@ public class DefaultCiscoXmlPushService extends AbstractService
     @Override
     protected void doStart()
     {
-        ChannelInboundHandler handler = new CiscoXmlResponseChannelHandler(
+        ChannelInboundHandler handler = new XmlResponseChannelHandler(
                                                 PHONE_KEY, PUSH_RESP_KEY);
 
         bootstrap = new Bootstrap();
@@ -158,21 +177,38 @@ public class DefaultCiscoXmlPushService extends AbstractService
     }
 
     @Override
-    public ListenableFuture<CiscoXmlPushResponse> submitCommand(
-            CiscoIpPhone phone, CiscoIPPhoneExecute command)
+    public ListenableFuture<XmlPushResponse> submitCommand(
+            IpPhone phone, CiscoIPPhoneExecute command)
+    {
+        return submitCommand(phone, command, null);
+    }
+
+    @Override
+    public ListenableFuture<XmlPushResponse> submitCommand(
+            IpPhone phone, CiscoIPPhoneExecute command,
+            XmlPushCallback commandCallback)
     {
         checkRunning();
 
-        final HttpRequest httpRequest = buildRequest(phone.getHostname(),
-                phone.getUsername(), phone.getPassword(), command);
+        String callbackId = null;
+        if (commandCallback != null)
+        {
+            callbackId = callbackManager.registerCallback(commandCallback);
+        }
 
-        final SettableFuture<CiscoXmlPushResponse> responseFuture =
+        final CiscoIPPhoneExecute commandCopy = CLONER.deepClone(command);
+
+        final HttpRequest httpRequest = buildRequest(phone.getHostname(),
+                phone.getUsername(), phone.getPassword(),
+                commandCopy, callbackId);
+
+        final SettableFuture<XmlPushResponse> responseFuture =
                 SettableFuture.create();
 
         ChannelFuture channelFuture = bootstrap.connect(phone.getHostname(),
                                                         phone.getPort());
         channelFuture.addListener(
-                new ChannelConnectListener<CiscoXmlPushResponse>(
+                new ChannelConnectListener<XmlPushResponse>(
                         httpRequest,
                         PHONE_KEY, phone,
                         PUSH_RESP_KEY, responseFuture,
@@ -183,18 +219,32 @@ public class DefaultCiscoXmlPushService extends AbstractService
     }
 
     @Override
-    public ImmutableList<ListenableFuture<CiscoXmlPushResponse>> submitCommand(
-            ImmutableList<CiscoIpPhone> phones, CiscoIPPhoneExecute command)
+    public ImmutableList<ListenableFuture<XmlPushResponse>> submitCommand(
+            ImmutableList<IpPhone> phones, CiscoIPPhoneExecute command)
     {
-        Builder<ListenableFuture<CiscoXmlPushResponse>> listBuilder =
+        return submitCommand(phones,  command, null);
+    }
+
+    @Override
+    public ImmutableList<ListenableFuture<XmlPushResponse>> submitCommand(
+            ImmutableList<IpPhone> phones, CiscoIPPhoneExecute command,
+            XmlPushCallback commandCallback)
+    {
+        Builder<ListenableFuture<XmlPushResponse>> listBuilder =
                 ImmutableList.builder();
 
-        for (CiscoIpPhone phone : phones)
+        for (IpPhone phone : phones)
         {
-            listBuilder.add(submitCommand(phone, command));
+            listBuilder.add(submitCommand(phone, command, commandCallback));
         }
 
         return listBuilder.build();
+    }
+
+    @Override
+    public boolean unregisterCallback(XmlPushCallback commandCallback)
+    {
+        return callbackManager.unregisterCallback(commandCallback);
     }
 
     /**
@@ -230,12 +280,17 @@ public class DefaultCiscoXmlPushService extends AbstractService
      * @return a fully-populated HTTP request
      */
     private static HttpRequest buildRequest(String hostname, String username,
-            String password, CiscoIPPhoneExecute command)
+            String password, CiscoIPPhoneExecute command, String callbackId)
     {
         Preconditions.checkNotNull(username, "Username cannot be null.");
         Preconditions.checkNotNull(password, "Password cannot be null.");
         Preconditions.checkNotNull(command,
                 "CiscoIPPhoneExecute object cannot be null.");
+
+        if (callbackId != null)
+        {
+            replaceCommandIdPlaceholder(command, callbackId);
+        }
 
         // Marshal object to XML and escape the XML:
         String objectAsXml = XmlMarshaller.marshalToXml(command);
@@ -265,6 +320,8 @@ public class DefaultCiscoXmlPushService extends AbstractService
                 HttpHeaders.Values.CLOSE);
         request.headers().set(HttpHeaders.Names.CONTENT_TYPE,
                 HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+        request.headers().set(HttpHeaders.Names.CONTENT_LENGTH,
+                encodedPostContent.length);
 
         return request;
     }
@@ -290,6 +347,18 @@ public class DefaultCiscoXmlPushService extends AbstractService
 
         return Base64.encodeBase64String(
                 credentials.toString().getBytes(ENCODING));
+    }
+
+    private static void replaceCommandIdPlaceholder(CiscoIPPhoneExecute command,
+                                                    String callbackId)
+    {
+        for (CiscoIPPhoneExecuteItemType item : command.getExecuteItem())
+        {
+            if (item.getURL() != null)
+            {
+                item.setURL(item.getURL().replaceAll("\\$CALLBACKID", callbackId));
+            }
+        }
     }
 
     /**
