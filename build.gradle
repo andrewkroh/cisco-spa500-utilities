@@ -18,7 +18,6 @@ subprojects {
     apply plugin: 'eclipse'
     apply plugin: 'findbugs'
     apply plugin: 'pmd'
-    apply from:   "$rootProject.projectDir/provided.gradle"
 
     sourceCompatibility = 1.7
 
@@ -79,18 +78,19 @@ subprojects {
 project(':common') {
     dependencies {
         compile libs.guava,
+                libs.jsr305,
                 libs.netty_all
     }
 }
 
 project(':ip-phone-inventory-manager') {
     dependencies {
-        compile libs.commons_lang,
-                libs.guava
-
-        provided libs.cdi_api,
-                 libs.slf4j_api,
-                 libs.inject
+        compile libs.cdi_api,
+                libs.commons_lang,
+                libs.guava,
+                libs.inject,
+                libs.jsr305,
+                libs.slf4j_api
     }
 }
 
@@ -101,9 +101,8 @@ project(':multicast-listener') {
 
     dependencies {
         compile project(':common'),
-                libs.jcommander
-
-        provided libs.slf4j_api
+                libs.jcommander,
+                libs.slf4j_api
 
         runtime libs.slf4j_simple
     }
@@ -119,9 +118,8 @@ project(':rtp-streaming') {
                 libs.commons_io,
                 libs.commons_lang,
                 libs.jcommander,
-                libs.netty_all
-
-        provided libs.slf4j_api
+                libs.netty_all,
+                libs.slf4j_api
 
         runtime libs.slf4j_simple
     }
@@ -139,12 +137,12 @@ project(':server-phone-rest-service') {
                 project(':ip-phone-inventory-manager'),
                 project(':rtp-streaming'),
                 project(':xml-push-service'),
-                libs.guava
-
-        provided libs.cdi_api,
-                 libs.inject,
-                 libs.jaxrs_api,
-                 libs.slf4j_api
+                libs.cdi_api,
+                libs.guava,
+                libs.jsr305,
+                libs.inject,
+                libs.jaxrs_api,
+                libs.slf4j_api
     }
 }
 
@@ -156,9 +154,10 @@ project(':server-war') {
                 project(':ip-phone-inventory-manager'),
                 project(':xml-push-service')
 
-        provided libs.cdi_api
-
-        providedCompile libs.jsr305
+        providedCompile libs.jsr305,
+                        libs.cdi_api,
+                        libs.slf4j_api,
+                        libs.inject
 
         providedRuntime libs.slf4j_simple
     }
@@ -171,17 +170,16 @@ project(':xml-push-service') {
         compile project(':common'),
                 project(':xml-services-api'),
                 project(':ip-phone-inventory-manager'),
+                libs.cdi_api,
                 libs.commons_codec,
                 libs.commons_lang,
                 libs.guava,
+                libs.inject,
                 libs.java_deep_cloning,
+                libs.jaxrs_api,
                 libs.jsr305,
-                libs.netty_all
-
-        provided libs.cdi_api,
-                 libs.inject,
-                 libs.jaxrs_api,
-                 libs.slf4j_api
+                libs.netty_all,
+                libs.slf4j_api
 
         runtime libs.slf4j_simple
     }
@@ -198,7 +196,8 @@ project(':xml-services-api') {
     }
 
     dependencies {
-        compile libs.guava
+        compile libs.guava,
+                libs.jsr305
 
         xjc libs.jaxb_impl,
             libs.jaxb_xjc
