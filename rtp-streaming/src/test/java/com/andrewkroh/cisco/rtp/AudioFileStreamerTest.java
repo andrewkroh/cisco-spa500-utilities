@@ -118,7 +118,7 @@ public class AudioFileStreamerTest
     {
         streamer.startAsync();
         streamer.awaitRunning(5, TimeUnit.SECONDS);
-        verify(mockRtpSession, timeout(110).times(5)).sendData(any(RtpPacket.class));
+        verify(mockRtpSession, timeout(110).atLeast(5)).sendData(any(RtpPacket.class));
     }
 
     @Test
