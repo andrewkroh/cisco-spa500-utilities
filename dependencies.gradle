@@ -11,6 +11,7 @@ ext.libs = [
     jaxb_xjc:           'com.sun.xml.bind:jaxb-xjc:2.2.4',
     jaxrs_api:          'org.jboss.resteasy:jaxrs-api:3.0.6.Final',
     jcommander:         'com.beust:jcommander:1.29',
+    jsr305:             'com.google.code.findbugs:jsr305:2.0.2',
     junit:              'junit:junit:4.11',
     mockito:            'org.mockito:mockito-all:1.9.5',
     netty_all:          'io.netty:netty-all:4.0.12.Final',

@@ -158,6 +158,8 @@ project(':server-war') {
 
         provided libs.cdi_api
 
+        providedCompile libs.jsr305
+
         providedRuntime libs.slf4j_simple
     }
 }
@@ -171,7 +173,9 @@ project(':xml-push-service') {
                 project(':ip-phone-inventory-manager'),
                 libs.commons_codec,
                 libs.commons_lang,
+                libs.guava,
                 libs.java_deep_cloning,
+                libs.jsr305,
                 libs.netty_all
 
         provided libs.cdi_api,
