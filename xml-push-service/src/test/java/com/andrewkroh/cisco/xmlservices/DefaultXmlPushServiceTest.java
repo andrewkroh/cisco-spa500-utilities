@@ -17,11 +17,11 @@
 package com.andrewkroh.cisco.xmlservices;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -128,12 +128,12 @@ public class DefaultXmlPushServiceTest
         }
     }
 
-    private static final String TEST_URL = "http://localhost/test";
+    private static final String TEST_URL = "http://localhost/phones/rest";
 
-    private static final String TEST_CALLBACK_URL =
-            "http://localhost/phones/$CALLBACKID/get";
+    private static final String CALLBACK_URL_TEMPLATE = "$BASEURL/get";
 
-    private static final String CALLBACK_ID = "12345";
+    private static final String BASE_CALLBACK_URL =
+            "http://localhost/phones/rest/callback/12345";
 
     @Rule
     public final Timeout globalTimeout = new Timeout(10000);
@@ -155,7 +155,7 @@ public class DefaultXmlPushServiceTest
         pushService.startAsync().awaitRunning(10, TimeUnit.SECONDS);
 
         when(callbackManager.registerCallback(any(XmlPushCallback.class))).
-            thenReturn(CALLBACK_ID);
+            thenReturn(BASE_CALLBACK_URL);
     }
 
     @After
@@ -193,21 +193,21 @@ public class DefaultXmlPushServiceTest
     public void submitCommand_withCallback_receivedUrlContainsCallbackId()
             throws InterruptedException, ExecutionException, TimeoutException
     {
-        // Configure response from test server:
+        // Configure dummy response:
         final CiscoIPPhoneResponse serverResponse =
                 buildCiscoIPPhoneResponse(5, TEST_URL);
         testServer.setResponse(serverResponse);
 
         // Send request to server:
         pushService.submitCommand(mockPhone(testServer),
-                buildCiscoIPPhoneExecute(TEST_CALLBACK_URL), callback);
+                buildCiscoIPPhoneExecute(CALLBACK_URL_TEMPLATE), callback);
 
         verify(callbackManager).registerCallback(callback);
 
         // Verify that the callback ID was substituted:
         CiscoIPPhoneExecute command = testServer.getCiscoIPPhoneExecute().get();
         assertThat(command.getExecuteItem().get(0).getURL(),
-                   containsString(CALLBACK_ID));
+                   startsWith(BASE_CALLBACK_URL));
     }
 
     @Test

@@ -16,6 +16,8 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -122,8 +124,15 @@ public class DefaultXmlPushService extends AbstractService
 
     private final XmlPushCallbackManager callbackManager;
 
+    /**
+     * Amount of time to wait for the socket channel to connect.
+     */
     private final long connectTimeoutMs;
 
+    /**
+     * Amount of time to wait for a response from the phone after the
+     * socket channel has been connected.
+     */
     private final long responseTimeoutMs;
 
     /**
@@ -190,17 +199,17 @@ public class DefaultXmlPushService extends AbstractService
     {
         checkRunning();
 
-        String callbackId = null;
+        String callbackUrl = null;
         if (commandCallback != null)
         {
-            callbackId = callbackManager.registerCallback(commandCallback);
+            callbackUrl = callbackManager.registerCallback(commandCallback);
         }
 
         final CiscoIPPhoneExecute commandCopy = CLONER.deepClone(command);
 
         final HttpRequest httpRequest = buildRequest(phone.getHostname(),
                 phone.getUsername(), phone.getPassword(),
-                commandCopy, callbackId);
+                commandCopy, callbackUrl);
 
         final SettableFuture<XmlPushResponse> responseFuture =
                 SettableFuture.create();
@@ -277,19 +286,23 @@ public class DefaultXmlPushService extends AbstractService
      *            password for authentication to the phone
      * @param command
      *            command to execute, this will be marshaled to XML
+     * @param baseCallbackUrl
+     *            optional base URL to the callback resource, any URLs in the
+     *            outgoing command will have $BASEURL replaced with this value.
+     *            {@code callbackUrl} cannot not end with '/'.
      * @return a fully-populated HTTP request
      */
     private static HttpRequest buildRequest(String hostname, String username,
-            String password, CiscoIPPhoneExecute command, String callbackId)
+            String password, CiscoIPPhoneExecute command, String baseCallbackUrl)
     {
         Preconditions.checkNotNull(username, "Username cannot be null.");
         Preconditions.checkNotNull(password, "Password cannot be null.");
         Preconditions.checkNotNull(command,
                 "CiscoIPPhoneExecute object cannot be null.");
 
-        if (callbackId != null)
+        if (baseCallbackUrl != null)
         {
-            replaceCommandIdPlaceholder(command, callbackId);
+            replaceBaseUrlPlaceholder(command, baseCallbackUrl);
         }
 
         // Marshal object to XML and escape the XML:
@@ -349,14 +362,26 @@ public class DefaultXmlPushService extends AbstractService
                 credentials.toString().getBytes(ENCODING));
     }
 
-    private static void replaceCommandIdPlaceholder(CiscoIPPhoneExecute command,
-                                                    String callbackId)
+    /**
+     * Replaces $BASEURL contained in any URLs within the {@code command} with
+     * {@code baseCallbackUrl}.
+     *
+     * @param command
+     *            command containing URLs
+     * @param baseCallbackUrl
+     *            value to replace $BASEURL with
+     */
+    private static void replaceBaseUrlPlaceholder(CiscoIPPhoneExecute command,
+                                                  String baseCallbackUrl)
     {
+        checkArgument(!baseCallbackUrl.endsWith("/"),
+                "Base callback URL cannot end with '/'");
+
         for (CiscoIPPhoneExecuteItemType item : command.getExecuteItem())
         {
             if (item.getURL() != null)
             {
-                item.setURL(item.getURL().replaceAll("\\$CALLBACKID", callbackId));
+                item.setURL(item.getURL().replaceAll("\\$BASEURL", baseCallbackUrl));
             }
         }
     }
@@ -366,7 +391,7 @@ public class DefaultXmlPushService extends AbstractService
      * format using a specific encoding scheme. This method uses UTF-8 to be
      * compliant with the <a href=
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars"> World
-     * Wide Web Consortium Recommendation</a> recommentation.
+     * Wide Web Consortium Recommendation</a> recommendation.
      *
      * @param s
      *            <code>String</code> to be translated.

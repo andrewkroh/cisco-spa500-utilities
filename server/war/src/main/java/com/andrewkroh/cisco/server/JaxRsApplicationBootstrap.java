@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.andrewkroh.cisco.server.phone.rest;
+package com.andrewkroh.cisco.server;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;

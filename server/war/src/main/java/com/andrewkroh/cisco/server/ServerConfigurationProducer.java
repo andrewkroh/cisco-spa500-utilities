@@ -16,9 +16,10 @@
 
 package com.andrewkroh.cisco.server;
 
+import static com.google.common.base.Preconditions.*;
+
 import java.net.URL;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Named;
 
@@ -26,13 +27,20 @@ import javax.inject.Named;
  *
  * @author akroh
  */
-@ApplicationScoped
 public class ServerConfigurationProducer
 {
     @Produces
     @Named("phoneInventoryXml")
-    public URL getPhoneInventoryXml()
+    public static URL getPhoneInventoryXml()
     {
         return ServerConfigurationProducer.class.getResource("/phone-inventory.xml");
+    }
+
+    @Produces
+    @Named("baseCallbackUrl")
+    public static String getBaseCallbackUrl()
+    {
+        return checkNotNull(System.getProperty("callback.url"),
+                    "callback.url property must be set.");
     }
 }

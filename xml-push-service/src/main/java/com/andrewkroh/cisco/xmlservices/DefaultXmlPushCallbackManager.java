@@ -1,24 +1,36 @@
 package com.andrewkroh.cisco.xmlservices;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.enterprise.inject.Default;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
 @Default
+@Singleton
 public class DefaultXmlPushCallbackManager implements XmlPushCallbackManager
 {
     private final ReentrantLock lock = new ReentrantLock();
 
+    private final String baseCallbackUrl;
+
     private final BiMap<String, XmlPushCallback> xmlPushCallbacks;
 
-    DefaultXmlPushCallbackManager()
+    @Inject
+    DefaultXmlPushCallbackManager(@Named("baseCallbackUrl") String baseCallbackUrl)
     {
+        this.baseCallbackUrl = checkNotNull(baseCallbackUrl,
+                "Base callback URL cannot be null.");
+        checkArgument(!baseCallbackUrl.endsWith("/"),
+                "Base callback URL cannot end with '/'");
         xmlPushCallbacks = HashBiMap.<String, XmlPushCallback>create();
     }
 
@@ -54,7 +66,7 @@ public class DefaultXmlPushCallbackManager implements XmlPushCallbackManager
                 xmlPushCallbacks.put(callbackId, commandCallback);
             }
 
-            return callbackId;
+            return baseCallbackUrl + "/" + callbackId;
         }
         finally
         {
