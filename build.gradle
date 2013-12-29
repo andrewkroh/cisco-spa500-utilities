@@ -6,6 +6,14 @@ ext.isJenkins = System.env.BUILD_NUMBER != null
 allprojects {
     repositories {
         mavenCentral()
+
+        // Repository containing WildFly with our patch for WFLY-768.
+        ivy {
+            url 'http://blog.crowbird.com/artifacts'
+            layout 'pattern', {
+                artifact '[organisation]/[artifact]-[revision](-[classifier])(.[ext])'
+            }
+        }
     }
 
     group = 'com.andrewkroh.cisco'
@@ -163,10 +171,18 @@ project(':server-phone-rest-service') {
 
 project(':server-war') {
     apply plugin: 'war'
+    apply plugin: 'distribution'
+
+    configurations {
+        jboss
+    }
 
     dependencies {
-        compile project(':server-phone-rest-service'),
-                project(':ip-phone-inventory-manager'),
+        jboss 'org.jboss:wildfly:8.0.0.CR1@zip'
+
+        compile project(':ip-phone-inventory-manager'),
+                project(':server-directory-service'),
+                project(':server-phone-rest-service'),
                 project(':xml-push-service')
 
         providedCompile libs.jsr305,
@@ -175,6 +191,29 @@ project(':server-war') {
                         libs.inject
 
         providedRuntime libs.slf4j_simple
+    }
+
+    distributions {
+        main {
+            baseName = 'phone-app-server'
+            contents {
+                from {
+                    configurations.jboss.collect { zipTree(it) }
+                }
+
+                into('wildfly-8.0.0.CR1/standalone/deployments') {
+                    from war.outputs.files
+                }
+
+                from "$projectDir/src/main/scripts"
+
+                from "$projectDir/src/main/properties"
+
+                into('config') {
+                    from "$projectDir/src/main/config"
+                }
+            }
+        }
     }
 }
 

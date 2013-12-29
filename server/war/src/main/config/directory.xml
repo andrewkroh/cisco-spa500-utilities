@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Directory>
+    <title>Company Directory</title>
+    <entry>
+        <name>John Smith</name>
+        <telephoneNumber>555-555-0001</telephoneNumber>
+    </entry>
+    <entry>
+        <name>Jane Smith</name>
+        <telephoneNumber>555-555-0002</telephoneNumber>
+    </entry>
+</Directory>
