@@ -47,9 +47,9 @@ public class XmlIpPhoneInventoryManager implements IpPhoneInventoryManager
     private static ImmutableSet<IpPhone> parseXmlFile(URL configFile)
             throws JAXBException, IOException
     {
-        JAXBContext jaxbContext = JAXBContext.newInstance(PhoneInventory.class);
+        JAXBContext jaxbContext = JAXBContext.newInstance(JaxbPhoneInventory.class);
         Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-        PhoneInventory inventory = (PhoneInventory) jaxbUnmarshaller.unmarshal(
+        JaxbPhoneInventory inventory = (JaxbPhoneInventory) jaxbUnmarshaller.unmarshal(
                 configFile.openStream());
         return ImmutableSet.<IpPhone>copyOf(inventory.getPhones());
     }

@@ -129,6 +129,21 @@ project(':rtp-streaming') {
     }
 }
 
+project(':server-directory-service') {
+    apply plugin: 'java'
+
+    dependencies {
+        compile project(':xml-services-api'),
+                project(':server-phone-rest-service'),
+                libs.cdi_api,
+                libs.guava,
+                libs.jsr305,
+                libs.inject,
+                libs.jaxrs_api,
+                libs.slf4j_api
+    }
+}
+
 project(':server-phone-rest-service') {
     apply plugin: 'java'
 

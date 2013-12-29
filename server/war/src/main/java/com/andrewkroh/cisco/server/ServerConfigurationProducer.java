@@ -37,6 +37,14 @@ public class ServerConfigurationProducer
     }
 
     @Produces
+    @Named("directoryXml")
+    public static URL getDirectoryXml()
+    {
+        // TODO: use System.getenv("JBOSS_HOME")/config to read file
+        return ServerConfigurationProducer.class.getResource("/directory.xml");
+    }
+
+    @Produces
     @Named("baseCallbackUrl")
     public static String getBaseCallbackUrl()
     {

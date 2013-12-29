@@ -27,18 +27,18 @@ import javax.xml.bind.annotation.XmlRootElement;
 import com.google.common.collect.ImmutableList;
 
 @XmlRootElement(name = "PhoneInventory")
-class PhoneInventory
+class JaxbPhoneInventory
 {
     @XmlElement(name = "phone", nillable = false, required = true)
     private final List<BasicIpPhone> phones;
 
-    public PhoneInventory(List<BasicIpPhone> phones)
+    public JaxbPhoneInventory(List<BasicIpPhone> phones)
     {
         this.phones = checkNotNull(phones);
     }
 
     @SuppressWarnings("unused")
-    private PhoneInventory()
+    private JaxbPhoneInventory()
     {
         this(new ArrayList<BasicIpPhone>());
     }
