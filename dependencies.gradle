@@ -17,4 +17,5 @@ ext.libs = [
     netty_all:          'io.netty:netty-all:4.0.12.Final',
     slf4j_api:          'org.slf4j:slf4j-api:1.7.5',
     slf4j_simple:       'org.slf4j:slf4j-simple:1.7.5',
+    validation_api:     'javax.validation:validation-api:1.1.0.Final'
 ]

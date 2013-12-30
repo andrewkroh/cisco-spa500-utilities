@@ -22,6 +22,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
 /**
+ * JAX-RS resource that hosts {@link XmlPushCallback}s as sub-resources.
  *
  * @author akroh
  */
@@ -29,12 +30,25 @@ import javax.ws.rs.PathParam;
 @Path("/callback")
 public class XmlPushCallbackRestResource
 {
+    /**
+     * {@link XmlPushCallbackManager} that contains the {@link XmlPushCallback}
+     * objects.
+     */
     @Inject
     private XmlPushCallbackManager manager;
 
+    /**
+     * Gets the callback resource by its callbackId.
+     *
+     * @param callbackId
+     *            callback ID assigned to the {@link XmlPushCallback} when it
+     *            was registered
+     * @return {@link XmlPushCallback} with the given callback ID, or
+     *         {@code null} if one is not registered with that ID
+     */
     @Path("/{id}")
-    public Object getCallback(@PathParam("id") String id)
+    public XmlPushCallback getCallback(@PathParam("id") String callbackId)
     {
-        return manager.getCallback(id);
+        return manager.getCallback(callbackId);
     }
 }

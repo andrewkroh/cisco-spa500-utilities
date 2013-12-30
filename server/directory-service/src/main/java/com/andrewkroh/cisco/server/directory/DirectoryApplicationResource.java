@@ -28,7 +28,7 @@ import com.cisco.xmlservices.generated.CiscoIPPhoneDirectory;
 import com.cisco.xmlservices.generated.CiscoIPPhoneDirectoryEntryType;
 
 /**
- * JAX-RS resource that responds with the XML directory.
+ * JAX-RS resource that responds with the phone directory.
  *
  * <p/>
  * It implements {@link PhoneApplication} which allows the class to be
@@ -38,6 +38,9 @@ import com.cisco.xmlservices.generated.CiscoIPPhoneDirectoryEntryType;
  */
 public class DirectoryApplicationResource implements PhoneApplication
 {
+    /**
+     * Manages directory data.
+     */
     private final DirectoryManager directoryManager;
 
     @Inject
@@ -52,9 +55,15 @@ public class DirectoryApplicationResource implements PhoneApplication
         return "directory";
     }
 
+    /**
+     * Gets the directory in XML format that the Cisco IP phones support.
+     *
+     * @return directory data as XML
+     */
     @GET
+    @Path("/phone")
     @Produces("application/xml")
-    public CiscoIPPhoneDirectory getCiscoDirectory()
+    public CiscoIPPhoneDirectory getDirectoryForIpPhone()
     {
         Directory directory = directoryManager.getDirectory();
 
@@ -73,10 +82,16 @@ public class DirectoryApplicationResource implements PhoneApplication
         return ciscoDir;
     }
 
+    /**
+     * Gets the directory in JSON format that can easily be used in the
+     * browser.
+     *
+     * @return directory data as JSON for the web
+     */
     @GET
-    @Path("/get")
+    @Path("/web")
     @Produces("application/json")
-    public Directory getDirectory()
+    public Directory getDirectoryForWeb()
     {
         return directoryManager.getDirectory();
     }

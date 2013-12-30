@@ -21,6 +21,19 @@ import javax.inject.Inject;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
+/**
+ * JAX-RS resource that hosts the dynamically registered
+ * {@link PhoneApplication}s. Each {@code PhoneApplication} is treated as a
+ * JAX-RS sub-resource. The sub-resources are obtained referencing their
+ * {@link PhoneApplication#getApplicationId()} values.
+ *
+ * <p/>
+ * CDI Note: this class does not use constructor injection because Resteasy
+ * expects a no-arg constructor. Resteasy performs injection when the class is
+ * used.
+ *
+ * @author akroh
+ */
 @ApplicationScoped
 @Path("/app")
 public class PhoneApplicationResource

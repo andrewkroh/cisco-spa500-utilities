@@ -28,13 +28,34 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import com.andrewkroh.cisco.phoneinventory.jaxb.JaxbIpPhone;
+import com.andrewkroh.cisco.phoneinventory.jaxb.JaxbPhoneInventory;
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * IP phone inventory manager that reads its data from an XML file.
+ *
+ * @author akroh
+ */
 @Default
 public class XmlIpPhoneInventoryManager implements IpPhoneInventoryManager
 {
+    /**
+     * Set of all {@link IpPhone}s read from the XML file.
+     */
     private final ImmutableSet<IpPhone> phones;
 
+    /**
+     * Creates a new {@code XmlIpPhoneInventoryManager} and initializes it with
+     * data read from the specified XML file.
+     *
+     * @param phoneInventoryXml
+     *            URL to the XML file containing the IP phone inventory
+     * @throws JAXBException
+     *             if there is a problem parsing the XML
+     * @throws IOException
+     *             if there is a problem reading the XML file
+     */
     @Inject
     public XmlIpPhoneInventoryManager(
             @Named("phoneInventoryXml") URL phoneInventoryXml)
@@ -44,14 +65,36 @@ public class XmlIpPhoneInventoryManager implements IpPhoneInventoryManager
         this.phones = parseXmlFile(phoneInventoryXml);
     }
 
-    private static ImmutableSet<IpPhone> parseXmlFile(URL configFile)
+    /**
+     * Parses the file located at the given URL into a set of {@link IpPhone}
+     * objects.
+     *
+     * @param phoneInventoryXml
+     *            URL to the XML file containing the IP phone inventory
+     * @return set of {@link IpPhone} objects read from the XML file
+     * @throws JAXBException
+     *             if there is a problem parsing the XML
+     * @throws IOException
+     *             if there is a problem reading the XML file
+     */
+    private static ImmutableSet<IpPhone> parseXmlFile(URL phoneInventoryXml)
             throws JAXBException, IOException
     {
-        JAXBContext jaxbContext = JAXBContext.newInstance(JaxbPhoneInventory.class);
+        JAXBContext jaxbContext = JAXBContext.newInstance(
+                JaxbPhoneInventory.class);
         Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-        JaxbPhoneInventory inventory = (JaxbPhoneInventory) jaxbUnmarshaller.unmarshal(
-                configFile.openStream());
-        return ImmutableSet.<IpPhone>copyOf(inventory.getPhones());
+        JaxbPhoneInventory jaxbInventory = (JaxbPhoneInventory) jaxbUnmarshaller.
+                unmarshal(phoneInventoryXml.openStream());
+
+        System.out.println(jaxbInventory);
+        ImmutableSet.Builder<IpPhone> builder = ImmutableSet.builder();
+        for (JaxbIpPhone jaxbPhone : jaxbInventory.getPhones())
+        {
+            builder.add(new BasicIpPhone(jaxbPhone.getHostname(),
+                    jaxbPhone.getPort(), jaxbPhone.getUsername(),
+                    jaxbPhone.getPassword()));
+        }
+        return builder.build();
     }
 
     @Override

@@ -14,41 +14,44 @@
  * limitations under the License.
  */
 
-package com.andrewkroh.cisco.phoneinventory;
+package com.andrewkroh.cisco.phoneinventory.jaxb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import javax.xml.bind.annotation.XmlElement;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * Basic implementation of {@link IpPhone}.
- *
- * <p/>
- * This class is immutable and thread-safe.
+ * IP phone that is contained within the {@link JaxbPhoneInventory}.
  *
  * @author akroh
  */
-class BasicIpPhone implements IpPhone
+public class JaxbIpPhone
 {
     /**
      * Hostname or IP address of the phone.
      */
+    @XmlElement(required = true)
     private final String hostname;
 
     /**
      * Port number of the IP phone's web server.
      */
+    @XmlElement(required = true)
     private final int port;
 
     /**
      * Username for authenticating to the IP phone.
      */
+    @XmlElement(required = true)
     private final String username;
 
     /**
      * Password for authenticating to the IP phone.
      */
+    @XmlElement(required = true)
     private final String password;
 
     /**
@@ -70,7 +73,7 @@ class BasicIpPhone implements IpPhone
      * @throws NullPointerException
      *             if any parameter is {@code null}
      */
-    public BasicIpPhone(String hostname, Integer port, String username,
+    public JaxbIpPhone(String hostname, Integer port, String username,
             String password)
     {
         this.hostname = checkNotNull(hostname);
@@ -81,25 +84,33 @@ class BasicIpPhone implements IpPhone
         checkArgument(port >= 0, "Port must be non-negative.");
     }
 
-    @Override
+    /**
+     * No-arg constructor that is required for JAXB.
+     */
+    @SuppressWarnings("unused")
+    private JaxbIpPhone()
+    {
+        this.hostname = null;
+        this.port = -1;
+        this.username = null;
+        this.password = null;
+    }
+
     public String getHostname()
     {
         return hostname;
     }
 
-    @Override
     public int getPort()
     {
         return port;
     }
 
-    @Override
     public String getUsername()
     {
         return username;
     }
 
-    @Override
     public String getPassword()
     {
         return password;

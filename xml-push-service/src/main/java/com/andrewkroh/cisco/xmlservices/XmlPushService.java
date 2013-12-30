@@ -18,6 +18,7 @@ package com.andrewkroh.cisco.xmlservices;
 
 import com.andrewkroh.cisco.phoneinventory.IpPhone;
 import com.cisco.xmlservices.generated.CiscoIPPhoneExecute;
+import com.cisco.xmlservices.generated.CiscoIPPhoneResponse;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Service;
@@ -28,8 +29,8 @@ import com.google.common.util.concurrent.Service;
  * POST.
  *
  * <p/>
- * Typical usage of this command is for triggering an action by the phone, such as
- * start streaming audio data, start receiving audio data, or display a
+ * Typical usage of this command is for triggering an action by the phone, such
+ * as start streaming audio data, start receiving audio data, or display a
  * menu/prompt. In order to display a menu you submit the URL of the menu to the
  * phone and it makes a HTTP GET request for that URL.
  *
@@ -44,19 +45,88 @@ import com.google.common.util.concurrent.Service;
  */
 public interface XmlPushService extends Service
 {
+    /**
+     * Submits a command to a single phone.
+     *
+     * @param phone
+     *            {@link IpPhone} to send the command to
+     * @param command
+     *            command to send
+     * @return {@link ListenableFuture} that will return a
+     *         {@link XmlPushResponse} containing the phone's
+     *         {@link CiscoIPPhoneResponse}. The future will automatically
+     *         timeout if no response is received.
+     */
     ListenableFuture<XmlPushResponse> submitCommand(
-            IpPhone phone, CiscoIPPhoneExecute command);
+            IpPhone phone,
+            CiscoIPPhoneExecute command);
 
+    /**
+     * Submits a command that expects a callback to a single phone.
+     *
+     * @param phone
+     *            {@link IpPhone} to send the command to
+     * @param command
+     *            command to send
+     * @param commandCallback
+     *            {@link XmlPushCallback} that hosts the callback URLs, if
+     *            {@code commandCallback} is not already registered as a
+     *            callback it will be registered and have its
+     *            {@link XmlPushCallback#setCallbackUrl(String)} method invoked.
+     * @return {@link ListenableFuture} that will return a
+     *         {@link XmlPushResponse} containing the phone's
+     *         {@link CiscoIPPhoneResponse}. The future will automatically
+     *         timeout if no response is received.
+     */
     ListenableFuture<XmlPushResponse> submitCommand(
-            IpPhone phone, CiscoIPPhoneExecute command,
+            IpPhone phone,
+            CiscoIPPhoneExecute command,
             XmlPushCallback commandCallback);
 
+    /**
+     * Submits a command to multiple IP phones.
+     *
+     * @param phones
+     *            {@link IpPhone}s to send the command to
+     * @param command
+     *            command to send
+     * @return list of {@link ListenableFuture}s that will return a
+     *         {@link XmlPushResponse} containing the phone's
+     *         {@link CiscoIPPhoneResponse}. The future will automatically
+     *         timeout if no response is received.
+     */
     ImmutableList<ListenableFuture<XmlPushResponse>> submitCommand(
-            ImmutableList<IpPhone> phones, CiscoIPPhoneExecute command);
+            ImmutableList<IpPhone> phones,
+            CiscoIPPhoneExecute command);
 
+    /**
+     * Submits a command that expects a callback to a single phone.
+     *
+     * @param phones
+     *            {@link IpPhone}s to send the command to
+     * @param command
+     *            command to send
+     * @param commandCallback
+     *            {@link XmlPushCallback} that hosts the callback URLs, if
+     *            {@code commandCallback} is not already registered as a
+     *            callback it will be registered and have its
+     *            {@link XmlPushCallback#setCallbackUrl(String)} method invoked.
+     * @return list of {@link ListenableFuture}s that will return a
+     *         {@link XmlPushResponse} containing the phone's
+     *         {@link CiscoIPPhoneResponse}. The future will automatically
+     *         timeout if no response is received.
+     */
     ImmutableList<ListenableFuture<XmlPushResponse>> submitCommand(
-            ImmutableList<IpPhone> phones, CiscoIPPhoneExecute command,
+            ImmutableList<IpPhone> phones,
+            CiscoIPPhoneExecute command,
             XmlPushCallback commandCallback);
 
+    /**
+     * Unregisters a {@link XmlPushCallback}.
+     *
+     * @param commandCallback
+     *            XmlPushCallback to unregister, {@code null} is safely handled.
+     * @return true if {@code commandCallback} has been unregistered
+     */
     boolean unregisterCallback(XmlPushCallback commandCallback);
 }

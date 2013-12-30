@@ -20,12 +20,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * Basic immutable implementation of {@link DirectoryEntry}.
  *
  * @author akroh
  */
-public class BasicDirectoryEntry implements DirectoryEntry
+class BasicDirectoryEntry implements DirectoryEntry
 {
     @XmlElement(required = true)
     private final String name;
@@ -59,5 +61,14 @@ public class BasicDirectoryEntry implements DirectoryEntry
     public String getTelephoneNumber()
     {
         return telephoneNumber;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this)
+                    .append("name", name)
+                    .append("telephoneNumber", telephoneNumber)
+                    .build();
     }
 }

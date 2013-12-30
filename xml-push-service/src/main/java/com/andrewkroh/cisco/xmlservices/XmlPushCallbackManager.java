@@ -16,11 +16,53 @@
 
 package com.andrewkroh.cisco.xmlservices;
 
+import javax.validation.constraints.NotNull;
+
+/**
+ * Manages {@link XmlPushCallback}s that are available to receive callbacks from
+ * IP phones. Once a callback has been registered additional calls to register
+ * it will have no effect. A callback should be explicitly unregistered after it
+ * is no longer in use.
+ *
+ * @author akroh
+ */
 public interface XmlPushCallbackManager
 {
-    Object getCallback(String id);
+    /**
+     * Gets a {@link XmlPushCallback} by its assigned callback ID.
+     *
+     * @param callbackId
+     *            unique ID assigned to the {@code XmlPushCallback} to obtain
+     * @return XmlPushCallback with assigned {@code callbackId}, or {@code null}
+     *         if one is not registered with the given ID
+     *
+     * @throws NullPointerException
+     *             if callbackId is {@code null}
+     */
+    XmlPushCallback getCallback(@NotNull String callbackId);
 
-    String registerCallback(XmlPushCallback commandCallback);
+    /**
+     * Registers a {@link XmlPushCallback} so that it can receive callbacks from
+     * IP phones. Additional calls to register a resource that is already
+     * registered will have no effect.
+     *
+     * @param commandCallback
+     *            XmlPushCallback to register, cannot be {@code null}
+     * @return URL where the XmlPushCallback has been published or was already
+     *         published
+     *
+     * @throws NullPointerException
+     *             if {@code commandCallback} is {@code null}
+     */
+    @NotNull
+    String registerCallback(@NotNull XmlPushCallback commandCallback);
 
+    /**
+     * Unregisters a {@link XmlPushCallback}.
+     *
+     * @param commandCallback
+     *            XmlPushCallback to unregister, {@code null} is safely handled.
+     * @return true if {@code commandCallback} has been unregistered
+     */
     boolean unregisterCallback(XmlPushCallback commandCallback);
 }

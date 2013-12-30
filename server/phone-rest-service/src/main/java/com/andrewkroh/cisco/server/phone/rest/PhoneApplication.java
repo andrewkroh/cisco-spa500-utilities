@@ -17,12 +17,18 @@
 package com.andrewkroh.cisco.server.phone.rest;
 
 /**
- * Interface for any application that wants to be automatically
+ * Interface for any JAX-RS phone application that wants to be automatically
  * published at runtime.
  *
  * @author akroh
  */
 public interface PhoneApplication
 {
+    /**
+     * The ID of the application. This ID will be used to access the
+     * application. The URL will be {@code .../rest/app/[applicationId]}.
+     *
+     * @return ID of the application
+     */
     String getApplicationId();
 }

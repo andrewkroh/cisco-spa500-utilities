@@ -18,6 +18,8 @@ package com.andrewkroh.cisco.server.directory;
 
 import static com.google.common.base.Preconditions.*;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -25,7 +27,7 @@ import com.google.common.collect.ImmutableList;
  *
  * @author akroh
  */
-public class BasicDirectory implements Directory
+class BasicDirectory implements Directory
 {
     private final String title;
 
@@ -47,5 +49,14 @@ public class BasicDirectory implements Directory
     public ImmutableList<DirectoryEntry> getDirectoryEntries()
     {
         return entries;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this)
+                    .append("title", title)
+                    .append("entries", entries)
+                    .build();
     }
 }

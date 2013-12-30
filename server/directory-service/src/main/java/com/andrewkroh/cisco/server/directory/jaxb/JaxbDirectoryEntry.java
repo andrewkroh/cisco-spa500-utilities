@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * Directory entry that is contained within a {@link JaxbDirectory}.
  *
@@ -57,5 +59,14 @@ public class JaxbDirectoryEntry
     public String getTelephoneNumber()
     {
         return telephoneNumber;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this)
+                    .append("name", name)
+                    .append("telephoneNumber", telephoneNumber)
+                    .build();
     }
 }

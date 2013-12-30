@@ -188,7 +188,8 @@ project(':server-war') {
         providedCompile libs.jsr305,
                         libs.cdi_api,
                         libs.slf4j_api,
-                        libs.inject
+                        libs.inject,
+                        libs.validation_api
 
         providedRuntime libs.slf4j_simple
     }
@@ -233,7 +234,8 @@ project(':xml-push-service') {
                 libs.jaxrs_api,
                 libs.jsr305,
                 libs.netty_all,
-                libs.slf4j_api
+                libs.slf4j_api,
+                libs.validation_api
 
         runtime libs.slf4j_simple
     }

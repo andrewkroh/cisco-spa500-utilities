@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.andrewkroh.cisco.phoneinventory;
+package com.andrewkroh.cisco.phoneinventory.jaxb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -24,15 +24,23 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import com.google.common.collect.ImmutableList;
 
+/**
+ * Container class for marshaling and unmarshaling a list of
+ * {@link JaxbIpPhone} objects to and read from XML using JAXB.
+ *
+ * @author akroh
+ */
 @XmlRootElement(name = "PhoneInventory")
-class JaxbPhoneInventory
+public class JaxbPhoneInventory
 {
     @XmlElement(name = "phone", nillable = false, required = true)
-    private final List<BasicIpPhone> phones;
+    private final List<JaxbIpPhone> phones;
 
-    public JaxbPhoneInventory(List<BasicIpPhone> phones)
+    public JaxbPhoneInventory(List<JaxbIpPhone> phones)
     {
         this.phones = checkNotNull(phones);
     }
@@ -40,11 +48,19 @@ class JaxbPhoneInventory
     @SuppressWarnings("unused")
     private JaxbPhoneInventory()
     {
-        this(new ArrayList<BasicIpPhone>());
+        this(new ArrayList<JaxbIpPhone>());
     }
 
-    public ImmutableList<BasicIpPhone> getPhones()
+    public ImmutableList<JaxbIpPhone> getPhones()
     {
         return ImmutableList.copyOf(phones);
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this)
+                    .append("phones", phones)
+                    .build();
     }
 }

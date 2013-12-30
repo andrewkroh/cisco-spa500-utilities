@@ -4,7 +4,7 @@ $(document).ready(function(){
     $.ajax({
         type: "GET",
         dataType: "json",
-        url: "/phones/rest/app/directory/get",
+        url: "/phones/rest/app/directory/web",
         success: function( resp ){
             for(var i = 0; i < resp.directoryEntries.length; i++)
             {

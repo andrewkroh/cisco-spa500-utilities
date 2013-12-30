@@ -23,6 +23,8 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * Directory class that can be written to and read from XML using JAXB.
  *
@@ -62,5 +64,14 @@ public class JaxbDirectory
     public List<JaxbDirectoryEntry> getDirectoryEntries()
     {
         return entries;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new ToStringBuilder(this)
+                    .append("title", title)
+                    .append("entries", entries)
+                    .build();
     }
 }

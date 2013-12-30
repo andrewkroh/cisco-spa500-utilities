@@ -40,6 +40,8 @@ public class DirectoryApplicationResourceTest
 
     private final static String NUMBER = "555-555-5555";
 
+    private final static String APPLICATION_ID = "directory";
+
     /**
      * {@link DirectoryApplicationResource} under test.
      */
@@ -72,16 +74,40 @@ public class DirectoryApplicationResourceTest
     }
 
     /**
-     * Tests that {@code getDirectory} returns a {@link CiscoIPPhoneDirectory}
-     * object translated from {@link Directory}.
+     * Tests that the resource uses the correct application ID for the
+     * directory.
      */
     @Test
-    public void getDirectory_returnsCiscoDirectory()
+    public void getApplicationId_returnsApplicationId()
     {
-        CiscoIPPhoneDirectory dir = resource.getCiscoDirectory();
+        assertThat(resource.getApplicationId(), equalTo(APPLICATION_ID));
+    }
+
+    /**
+     * Tests that {@code getDirectoryForIpPhone} returns a
+     * {@link CiscoIPPhoneDirectory} object translated from {@link Directory}.
+     */
+    @Test
+    public void getDirectoryForIpPhone_returnsCiscoDirectory()
+    {
+        CiscoIPPhoneDirectory dir = resource.getDirectoryForIpPhone();
         assertThat(dir.getTitle(), equalTo(TITLE));
         assertThat(dir.getDirectoryEntry(), hasSize(1));
         assertThat(dir.getDirectoryEntry().get(0).getName(), equalTo(NAME));
         assertThat(dir.getDirectoryEntry().get(0).getTelephone(), equalTo(NUMBER));
+    }
+
+    /**
+     * Tests that {@code getDirectoryForWeb} returns the directory object
+     * from the {@link DirectoryManager}.
+     */
+    @Test
+    public void getDirectoryForWeb_returnsDirectory()
+    {
+        Directory dir = resource.getDirectoryForWeb();
+        assertThat(dir.getTitle(), equalTo(TITLE));
+        assertThat(dir.getDirectoryEntries(), hasSize(1));
+        assertThat(dir.getDirectoryEntries().get(0).getName(), equalTo(NAME));
+        assertThat(dir.getDirectoryEntries().get(0).getTelephoneNumber(), equalTo(NUMBER));
     }
 }

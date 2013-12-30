@@ -18,7 +18,18 @@ package com.andrewkroh.cisco.phoneinventory;
 
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * Manages the inventory of IP phones. The manager contains the hostname, MAC
+ * address, credentials, and extensions associated with each phone.
+ *
+ * @author akroh
+ */
 public interface IpPhoneInventoryManager
 {
+    /**
+     * Gets the set of all {@link IpPhone}s known to the manager.
+     *
+     * @return set of all {@code IpPhone} objects known to the manager
+     */
     ImmutableSet<IpPhone> getIpPhones();
 }
