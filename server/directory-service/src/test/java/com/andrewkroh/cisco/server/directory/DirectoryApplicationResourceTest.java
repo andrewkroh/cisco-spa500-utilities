@@ -78,7 +78,7 @@ public class DirectoryApplicationResourceTest
     @Test
     public void getDirectory_returnsCiscoDirectory()
     {
-        CiscoIPPhoneDirectory dir = resource.getDirectory();
+        CiscoIPPhoneDirectory dir = resource.getCiscoDirectory();
         assertThat(dir.getTitle(), equalTo(TITLE));
         assertThat(dir.getDirectoryEntry(), hasSize(1));
         assertThat(dir.getDirectoryEntry().get(0).getName(), equalTo(NAME));

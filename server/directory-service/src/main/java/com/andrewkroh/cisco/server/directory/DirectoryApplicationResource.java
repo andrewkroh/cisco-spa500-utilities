@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import com.andrewkroh.cisco.server.phone.rest.PhoneApplication;
@@ -53,7 +54,7 @@ public class DirectoryApplicationResource implements PhoneApplication
 
     @GET
     @Produces("application/xml")
-    public CiscoIPPhoneDirectory getDirectory()
+    public CiscoIPPhoneDirectory getCiscoDirectory()
     {
         Directory directory = directoryManager.getDirectory();
 
@@ -70,5 +71,13 @@ public class DirectoryApplicationResource implements PhoneApplication
         }
 
         return ciscoDir;
+    }
+
+    @GET
+    @Path("/get")
+    @Produces("application/json")
+    public Directory getDirectory()
+    {
+        return directoryManager.getDirectory();
     }
 }
