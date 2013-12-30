@@ -1,0 +1,21 @@
+ext.libs = [
+    cdi_api:            'javax.enterprise:cdi-api:1.1',
+    commons_codec:      'commons-codec:commons-codec:1.8',
+    commons_io:         'org.apache.commons:commons-io:1.3.2',
+    commons_lang:       'org.apache.commons:commons-lang3:3.1',
+    guava:              'com.google.guava:guava:15.0',
+    hamcrest:           'org.hamcrest:hamcrest-all:1.3',
+    inject:             'javax.inject:javax.inject:1',
+    java_deep_cloning:  'uk.com.robust-it:cloning:1.9.0',
+    jaxb_impl:          'com.sun.xml.bind:jaxb-impl:2.2.4',
+    jaxb_xjc:           'com.sun.xml.bind:jaxb-xjc:2.2.4',
+    jaxrs_api:          'org.jboss.resteasy:jaxrs-api:3.0.6.Final',
+    jcommander:         'com.beust:jcommander:1.29',
+    jsr305:             'com.google.code.findbugs:jsr305:2.0.2',
+    junit:              'junit:junit:4.11',
+    mockito:            'org.mockito:mockito-all:1.9.5',
+    netty_all:          'io.netty:netty-all:4.0.12.Final',
+    slf4j_api:          'org.slf4j:slf4j-api:1.7.5',
+    slf4j_simple:       'org.slf4j:slf4j-simple:1.7.5',
+    validation_api:     'javax.validation:validation-api:1.1.0.Final'
+]

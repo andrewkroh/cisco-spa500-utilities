@@ -185,7 +185,6 @@ public final class XmlMarshaller
         {
             throw new RuntimeException(e);
         }
-
     }
 
     /**

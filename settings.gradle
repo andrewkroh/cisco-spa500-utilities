@@ -1,5 +1,16 @@
 include ':common'
+include ':ip-phone-inventory-manager'
 include ':multicast-listener'
 include ':rtp-streaming'
+include ':server-directory-service'
+include ':server-phone-rest-service'
+include ':server-war'
 include ':xml-push-service'
 include ':xml-services-api'
+
+project(':server-directory-service').projectDir = 
+    new File(rootDir, 'server/directory-service')
+project(':server-phone-rest-service').projectDir = 
+    new File(rootDir, 'server/phone-rest-service')
+project(':server-war').projectDir = 
+    new File(rootDir, 'server/war')

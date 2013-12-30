@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.andrewkroh.cisco.phoneinventory.IpPhone;
 import com.google.common.util.concurrent.SettableFuture;
 
 /**
@@ -51,15 +52,15 @@ class ChannelConnectListener<T> implements ChannelFutureListener
     private final HttpRequest httpRequest;
 
     /**
-     * {@code AttributeKey} used to put the {@code CiscoIpPhone} object into the
+     * {@code AttributeKey} used to put the {@code IpPhone} object into the
      * {@code Channel}.
      */
-    private final AttributeKey<CiscoIpPhone> phoneAttributeKey;
+    private final AttributeKey<IpPhone> phoneAttributeKey;
 
     /**
-     * {@code CiscoIpPhone} to store into the {@code Channel}.
+     * {@code IpPhone} to store into the {@code Channel}.
      */
-    private final CiscoIpPhone phone;
+    private final IpPhone phone;
 
     /**
      * {@code AttributeKey} used to put the {@link SettableFuture} object into
@@ -105,10 +106,10 @@ class ChannelConnectListener<T> implements ChannelFutureListener
      *            {@code HttpRequest} to write to the channel after the channel
      *            is connected
      * @param phoneAttributeKey
-     *            {@code AttributeKey} used to store the {@code CiscoIpPhone}
+     *            {@code AttributeKey} used to store the {@code IpPhone}
      *            with the channel
      * @param phone
-     *            {@code CiscoIpPhone} to store with the channel
+     *            {@code IpPhone} to store with the channel
      * @param responseFutureAttributeKey
      *            {@code AttributeKey} used to store the {@code SettableFuture}
      *            with the channel
@@ -124,8 +125,8 @@ class ChannelConnectListener<T> implements ChannelFutureListener
      *            {@code Channel} closed
      */
     public ChannelConnectListener(HttpRequest httpRequest,
-                                  AttributeKey<CiscoIpPhone> phoneAttributeKey,
-                                  CiscoIpPhone phone,
+                                  AttributeKey<IpPhone> phoneAttributeKey,
+                                  IpPhone phone,
                                   AttributeKey<SettableFuture<T>> responseFutureAttributeKey,
                                   SettableFuture<T> responseFuture,
                                   ScheduledExecutorService eventLoopExecutor,

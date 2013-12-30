@@ -23,11 +23,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.util.CharsetUtil;
 
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,7 +48,7 @@ import com.google.common.util.concurrent.SettableFuture;
  */
 public class HttpTestServerHandler extends SimpleChannelInboundHandler<Object>
 {
-    private final SettableFuture<HttpRequest> httpRequestFuture =
+    private final SettableFuture<String> httpRequestFuture =
             SettableFuture.create();
 
     private final AtomicReference<HttpResponse> httpResponseRef =
@@ -62,12 +64,16 @@ public class HttpTestServerHandler extends SimpleChannelInboundHandler<Object>
     protected void channelRead0(ChannelHandlerContext ctx, Object msg)
             throws Exception
     {
-        if (msg instanceof HttpRequest)
+        if (msg instanceof FullHttpRequest)
         {
-            HttpRequest httpRequest = (HttpRequest) msg;
+            FullHttpRequest httpRequest = (FullHttpRequest) msg;
+
+            String content = httpRequest.content().toString(CharsetUtil.ISO_8859_1);
+            content = content.replaceAll("XML=", "");
+            content = URLDecoder.decode(content, CharsetUtil.ISO_8859_1.name());
 
             // Store the received request:
-            httpRequestFuture.set(httpRequest);
+            httpRequestFuture.set(content);
 
             // Write the given response:
             HttpResponse response = httpResponseRef.get();
@@ -78,7 +84,7 @@ public class HttpTestServerHandler extends SimpleChannelInboundHandler<Object>
         }
     }
 
-    public ListenableFuture<HttpRequest> getReceivedHttpRequest()
+    public ListenableFuture<String> getReceivedHttpRequest()
     {
         return httpRequestFuture;
     }
