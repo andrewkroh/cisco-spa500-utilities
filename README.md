@@ -1,4 +1,4 @@
-cisco-spa500-utilities ![Build Status](https://va.crowbird.com/build-status/cisco-spa500-utilities)
+cisco-spa500-utilities
 ======================
 - Author: Andrew Kroh
 - License: Apache License, Version 2.0
